@@ -847,12 +847,10 @@ async function performPunch(movement, tasks) {
       await getAccuratePosition(100, 25000);
 
     show(
-      'Ubicación válida.
-' +
+      'Ubicación válida.\n' +
       'Precisión: ±' +
       Math.round(pos.coords.accuracy) +
-      ' m
-' +
+      ' m\n' +
       'Registrando fichaje…',
       'info'
     );
@@ -1351,14 +1349,6 @@ function show(msg, cls) {
     msg;
 
   el.style.display =
-    'block';
-
-}
-
-</script>
-
-</body>
-</html>
     'block';
 
 }
