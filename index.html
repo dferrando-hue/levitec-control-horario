@@ -58,7 +58,8 @@
       font-weight:700;
     }
 
-    select {
+    select,
+    input[type="text"] {
       width:100%;
       box-sizing:border-box;
       margin-top:6px;
@@ -166,6 +167,16 @@
         <option value="">Selecciona proyecto</option>
       </select>
 
+      <div id="subcontractorDetailBlock" style="display:none;">
+        <label>Nombre de la subcontrata</label>
+        <input
+          id="subcontractorDetail"
+          type="text"
+          maxlength="100"
+          autocomplete="organization"
+          placeholder="Indique el nombre de la empresa">
+      </div>
+
       <div class="grid">
         <button class="entry" onclick="punch('ENTRADA')">
           ENTRADA
@@ -203,6 +214,7 @@
       <input name="lat" id="f_lat">
       <input name="lon" id="f_lon">
       <input name="accuracy" id="f_accuracy">
+      <input name="subcontractorDetail" id="f_subcontractorDetail">
 
     </form>
 
@@ -223,6 +235,7 @@ const TOKEN = (params.get('sc') || '').trim();
 
 let googleCredential = '';
 let busy = false;
+let currentSubcontractor = '';
 
 
 /* =========================================================
@@ -472,6 +485,28 @@ async function punch(movement) {
   }
 
 
+  const subcontractorDetailInput =
+    document.getElementById('subcontractorDetail');
+
+  const subcontractorDetail =
+    subcontractorDetailInput
+      ? subcontractorDetailInput.value.trim()
+      : '';
+
+  if (
+    currentSubcontractor === 'NO LISTADO' &&
+    !subcontractorDetail
+  ) {
+
+    show(
+      'Indica el nombre de la subcontrata.',
+      'err'
+    );
+
+    return;
+  }
+
+
   if (!navigator.geolocation) {
 
     show(
@@ -515,6 +550,7 @@ async function punch(movement) {
       token:TOKEN,
       project:project,
       movement:movement,
+      subcontractorDetail:subcontractorDetail,
       lat:pos.coords.latitude,
       lon:pos.coords.longitude,
       accuracy:pos.coords.accuracy
@@ -630,6 +666,32 @@ window.addEventListener(
         .getElementById('subcontractor')
         .textContent =
         data.subcontractor;
+
+
+      currentSubcontractor =
+        String(data.subcontractor || '')
+          .trim()
+          .toUpperCase();
+
+
+      const detailBlock =
+        document.getElementById('subcontractorDetailBlock');
+
+      const detailInput =
+        document.getElementById('subcontractorDetail');
+
+      if (currentSubcontractor === 'NO LISTADO') {
+
+        detailBlock.style.display = 'block';
+        detailInput.required = true;
+
+      } else {
+
+        detailBlock.style.display = 'none';
+        detailInput.required = false;
+        detailInput.value = '';
+
+      }
 
 
       const sel =
