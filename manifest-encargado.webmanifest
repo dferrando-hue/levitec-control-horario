@@ -1,0 +1,24 @@
+{
+  "name": "LEVITEC · Control de trabajos",
+  "short_name": "LEVITEC Trabajos",
+  "description": "Revisión y validación de partes de obra LEVITEC",
+  "start_url": "./encargado.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f7",
+  "theme_color": "#007c7a",
+  "icons": [
+    {
+      "src": "./levitec-encargados-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./levitec-encargados-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
