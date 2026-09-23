@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LEVITEC · Control de trabajos</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    :root {
+      font-family: Arial, sans-serif;
+      --levitec:#007c7a;
+      --levitec-soft:#e9f6f3;
+      --text:#1f2933;
+      --muted:#68747d;
+      --line:#e5eaed;
+      --bg:#f4f6f7;
+      --white:#fff;
+      --green:#2f7d4a;
+      --green-bg:#edf8f1;
+      --yellow:#8a6816;
+      --yellow-bg:#fff8df;
+      --red:#a13c35;
+      --red-bg:#fff0ef;
+      --orange:#9a5d19;
+      --orange-bg:#fff4e7;
+    }
+
+    * { box-sizing:border-box; }
+
+    body {
+      margin:0;
+      min-height:100vh;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 50% -130px, rgba(0,124,122,.11), transparent 390px),
+        var(--bg);
+    }
+
+    .wrap {
+      width:100%;
+      max-width:920px;
+      margin:0 auto;
+      padding:28px 16px 42px;
+    }
+
+    .shell {
+      background:#fff;
+      border:1px solid rgba(31,41,51,.06);
+      border-radius:20px;
+      box-shadow:0 18px 45px rgba(31,41,51,.07);
+      overflow:hidden;
+    }
+
+    .top {
+      padding:26px 26px 20px;
+      text-align:center;
+      border-bottom:1px solid var(--line);
+    }
+
+    .logo {
+      width:164px;
+      max-width:60%;
+      display:block;
+      margin:0 auto 13px;
+    }
+
+    h1 {
+      margin:0;
+      font-size:25px;
+      letter-spacing:-.35px;
+    }
+
+    .subtitle {
+      margin-top:6px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    .accent {
+      width:42px;
+      height:3px;
+      background:var(--levitec);
+      border-radius:10px;
+      margin:14px auto 0;
+    }
+
+    .content {
+      padding:22px 24px 26px;
+    }
+
+    #loginBox {
+      max-width:380px;
+      margin:10px auto;
+      text-align:center;
+    }
+
+    .login-copy {
+      font-size:12px;
+      line-height:1.5;
+      color:var(--muted);
+      margin-bottom:14px;
+    }
+
+    #googleButton {
+      display:flex;
+      justify-content:center;
+      min-height:42px;
+    }
+
+    #app { display:none; }
+
+    .identity {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:13px 15px;
+      border:1px solid var(--line);
+      border-radius:13px;
+      background:#f9fafb;
+      margin-bottom:18px;
+    }
+
+    .identity-name {
+      font-weight:700;
+      font-size:14px;
+    }
+
+    .identity-meta {
+      margin-top:3px;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .role-pill {
+      flex:0 0 auto;
+      padding:6px 9px;
+      border-radius:999px;
+      background:var(--levitec-soft);
+      color:var(--levitec);
+      font-size:10px;
+      font-weight:700;
+    }
+
+    .calendar-layout {
+      display:grid;
+      grid-template-columns:minmax(280px, 340px) minmax(0,1fr);
+      gap:22px;
+      align-items:start;
+    }
+
+    .calendar-card {
+      border:1px solid var(--line);
+      border-radius:15px;
+      padding:15px;
+      background:#fff;
+    }
+
+    .calendar-head {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:12px;
+    }
+
+    .calendar-title {
+      font-size:15px;
+      font-weight:700;
+      text-transform:capitalize;
+    }
+
+    .nav-btn {
+      width:40px;
+      height:40px;
+      padding:0;
+      border:1px solid var(--line);
+      background:#f8f9fa;
+      border-radius:10px;
+      color:#4e5962;
+      font-size:18px;
+      cursor:pointer;
+    }
+
+    .weekdays, .calendar-grid {
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      gap:4px;
+    }
+
+    .weekday {
+      text-align:center;
+      padding:6px 0;
+      font-size:10px;
+      font-weight:700;
+      color:#8a939a;
+    }
+
+    .day {
+      position:relative;
+      min-height:42px;
+      border:0;
+      border-radius:10px;
+      background:transparent;
+      color:var(--text);
+      font-size:12px;
+      cursor:pointer;
+    }
+
+    .day:hover {
+      background:#f4f6f7;
+    }
+
+    .day.other {
+      color:#b5bdc3;
+    }
+
+    .day.selected {
+      background:var(--levitec);
+      color:#fff;
+      font-weight:700;
+    }
+
+    .day.today:not(.selected) {
+      outline:1px solid rgba(0,124,122,.55);
+    }
+
+    .dot {
+      position:absolute;
+      left:50%;
+      bottom:5px;
+      width:4px;
+      height:4px;
+      border-radius:50%;
+      transform:translateX(-50%);
+      background:var(--levitec);
+    }
+
+    .day.selected .dot { background:#fff; }
+
+    .pending-dot {
+      position:absolute;
+      top:5px;
+      right:6px;
+      min-width:15px;
+      height:15px;
+      padding:0 4px;
+      border-radius:999px;
+      background:#f0a143;
+      color:#fff;
+      font-size:8px;
+      line-height:15px;
+      text-align:center;
+      font-weight:700;
+    }
+
+    .day.selected .pending-dot {
+      background:#fff;
+      color:var(--levitec);
+    }
+
+    .legend {
+      display:flex;
+      align-items:center;
+      gap:6px;
+      margin-top:11px;
+      font-size:10px;
+      color:var(--muted);
+    }
+
+    .legend i {
+      width:7px;
+      height:7px;
+      border-radius:50%;
+      background:var(--levitec);
+      display:inline-block;
+    }
+
+    .day-panel {
+      min-width:0;
+    }
+
+    .selected-date {
+      font-size:19px;
+      font-weight:700;
+      text-transform:capitalize;
+    }
+
+    .summary {
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+      margin:10px 0 14px;
+    }
+
+    .summary-pill {
+      padding:6px 9px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      font-size:10px;
+      color:#59646c;
+      background:#fff;
+    }
+
+    .filters {
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:9px;
+      margin-bottom:16px;
+    }
+
+    label {
+      display:block;
+      margin-bottom:5px;
+      font-size:10px;
+      font-weight:700;
+      color:#68737c;
+    }
+
+    select, textarea {
+      width:100%;
+      border:1px solid #dbe1e5;
+      border-radius:9px;
+      background:#fff;
+      font-family:inherit;
+      font-size:12px;
+      color:var(--text);
+      outline:none;
+    }
+
+    select {
+      height:39px;
+      padding:0 9px;
+    }
+
+    textarea {
+      min-height:72px;
+      padding:10px;
+      resize:vertical;
+    }
+
+    select:focus, textarea:focus {
+      border-color:rgba(0,124,122,.65);
+      box-shadow:0 0 0 3px rgba(0,124,122,.08);
+    }
+
+    .sub-group {
+      margin-top:14px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      overflow:hidden;
+      background:#fff;
+    }
+
+    .sub-head {
+      padding:11px 13px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      background:#f7f9f9;
+      border-bottom:1px solid var(--line);
+    }
+
+    .sub-name {
+      font-size:13px;
+      font-weight:800;
+    }
+
+    .sub-count {
+      font-size:10px;
+      color:var(--muted);
+    }
+
+    .project-group {
+      padding:12px 13px 3px;
+    }
+
+    .project-title {
+      display:flex;
+      align-items:center;
+      gap:7px;
+      margin-bottom:10px;
+      font-size:11px;
+      font-weight:800;
+      color:var(--levitec);
+    }
+
+    .project-title:before {
+      content:"";
+      width:7px;
+      height:7px;
+      border-radius:50%;
+      background:var(--levitec);
+    }
+
+    .worker {
+      border:1px solid var(--line);
+      border-radius:12px;
+      margin-bottom:11px;
+      overflow:hidden;
+    }
+
+    .worker-head {
+      padding:11px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:9px;
+      background:#fbfcfc;
+      border-bottom:1px solid var(--line);
+    }
+
+    .worker-name {
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .worker-time {
+      margin-top:3px;
+      font-size:10px;
+      color:var(--muted);
+    }
+
+    .bulk-btn {
+      flex:0 0 auto;
+      border:1px solid rgba(0,124,122,.18);
+      border-radius:8px;
+      padding:7px 9px;
+      background:var(--levitec-soft);
+      color:var(--levitec);
+      font-size:9px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .task {
+      padding:12px;
+      border-bottom:1px solid #eef1f2;
+    }
+
+    .task:last-child { border-bottom:0; }
+
+    .task-top {
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+
+    .task-title {
+      min-width:0;
+      font-size:12px;
+      font-weight:700;
+      line-height:1.35;
+    }
+
+    .task-zone {
+      margin-top:4px;
+      font-size:10px;
+      color:var(--muted);
+    }
+
+    .task-desc {
+      margin-top:5px;
+      font-size:10px;
+      color:#4d5962;
+      font-style:italic;
+    }
+
+    .status-pill {
+      flex:0 0 auto;
+      padding:5px 7px;
+      border-radius:999px;
+      font-size:8px;
+      font-weight:800;
+    }
+
+    .status-PENDIENTE { background:var(--orange-bg); color:var(--orange); }
+    .status-VALIDADO { background:var(--green-bg); color:var(--green); }
+    .status-REVISAR { background:var(--yellow-bg); color:var(--yellow); }
+    .status-RECHAZADO { background:var(--red-bg); color:var(--red); }
+
+    .actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+      margin-top:10px;
+    }
+
+    .action-btn {
+      min-height:35px;
+      border-radius:8px;
+      padding:7px 10px;
+      border:1px solid var(--line);
+      background:#fff;
+      font-size:9px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .action-valid { color:var(--green); border-color:#cfe7d6; background:#f7fcf8; }
+    .action-review { color:var(--yellow); border-color:#ecdfaf; background:#fffdf5; }
+    .action-reject { color:var(--red); border-color:#ecd1cf; background:#fffafa; }
+
+    .obs-existing {
+      margin-top:8px;
+      padding:8px 9px;
+      border-radius:8px;
+      background:#f6f7f8;
+      font-size:10px;
+      line-height:1.4;
+      color:#59646c;
+    }
+
+    .editor {
+      display:none;
+      margin-top:9px;
+      padding-top:9px;
+      border-top:1px dashed #dce1e4;
+    }
+
+    .editor.open { display:block; }
+
+    .editor-actions {
+      display:flex;
+      justify-content:flex-end;
+      gap:7px;
+      margin-top:7px;
+    }
+
+    .editor-actions button {
+      min-height:34px;
+      border-radius:8px;
+      padding:7px 10px;
+      font-size:9px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .cancel-edit {
+      border:1px solid var(--line);
+      background:#fff;
+      color:#5c666e;
+    }
+
+    .save-edit {
+      border:0;
+      background:var(--levitec);
+      color:#fff;
+    }
+
+    .empty {
+      padding:26px 14px;
+      text-align:center;
+      border:1px dashed #d9dfe2;
+      border-radius:13px;
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .status-box {
+      display:none;
+      margin:0 0 14px;
+      padding:11px 12px;
+      border-radius:10px;
+      font-size:11px;
+      line-height:1.4;
+      white-space:pre-line;
+    }
+
+    .status-box.info { display:block; background:#edf5fb; color:#315a77; border:1px solid #d9e9f4; }
+    .status-box.err { display:block; background:#fff0ef; color:#8b342e; border:1px solid #f1d4d1; }
+    .status-box.ok { display:block; background:#eaf7ef; color:#27613a; border:1px solid #d2ecd9; }
+
+    .footer {
+      margin-top:21px;
+      padding-top:10px;
+      border-top:1px solid var(--line);
+      text-align:center;
+      color:#8a939a;
+      font-size:9px;
+    }
+
+    @media (max-width:760px) {
+      .wrap { padding:16px 10px 28px; }
+      .shell { border-radius:16px; }
+      .top { padding:23px 18px 18px; }
+      .content { padding:17px 14px 20px; }
+      .calendar-layout { grid-template-columns:1fr; }
+      .calendar-card { max-width:430px; width:100%; margin:0 auto; }
+      .filters { grid-template-columns:1fr; }
+    }
+
+    @media (max-width:420px) {
+      .logo { width:150px; }
+      h1 { font-size:22px; }
+      .identity { align-items:flex-start; }
+      .worker-head { align-items:flex-start; }
+      .bulk-btn { padding:7px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="wrap">
+  <div class="shell">
+
+    <div class="top">
+      <img class="logo" src="data:image/png;base64,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" alt="LEVITEC">
+      <h1>Control de trabajos</h1>
+      <div class="subtitle">Revisión y validación de partes de obra</div>
+      <div class="accent"></div>
+    </div>
+
+    <div class="content">
+
+      <div id="statusBox" class="status-box"></div>
+
+      <div id="loginBox">
+        <div class="login-copy">
+          Acceso exclusivo para jefes de obra y encargados autorizados.
+        </div>
+        <div id="googleButton"></div>
+      </div>
+
+      <div id="app">
+
+        <div class="identity">
+          <div>
+            <div class="identity-name" id="managerName"></div>
+            <div class="identity-meta" id="managerEmail"></div>
+          </div>
+          <div class="role-pill" id="managerRole"></div>
+        </div>
+
+        <div class="calendar-layout">
+
+          <div class="calendar-card">
+            <div class="calendar-head">
+              <button type="button" class="nav-btn" id="prevMonth" aria-label="Mes anterior">‹</button>
+              <div class="calendar-title" id="calendarTitle"></div>
+              <button type="button" class="nav-btn" id="nextMonth" aria-label="Mes siguiente">›</button>
+            </div>
+
+            <div class="weekdays">
+              <div class="weekday">L</div>
+              <div class="weekday">M</div>
+              <div class="weekday">X</div>
+              <div class="weekday">J</div>
+              <div class="weekday">V</div>
+              <div class="weekday">S</div>
+              <div class="weekday">D</div>
+            </div>
+
+            <div class="calendar-grid" id="calendarGrid"></div>
+
+            <div class="legend">
+              <i></i>
+              Los días con punto contienen partes registrados.
+            </div>
+          </div>
+
+          <div class="day-panel">
+            <div class="selected-date" id="selectedDateLabel">Selecciona un día</div>
+
+            <div class="summary">
+              <div class="summary-pill" id="workersSummary">0 trabajadores</div>
+              <div class="summary-pill" id="tasksSummary">0 tareas</div>
+              <div class="summary-pill" id="pendingSummary">0 pendientes</div>
+            </div>
+
+            <div class="filters">
+              <div>
+                <label for="projectFilter">Proyecto</label>
+                <select id="projectFilter">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="subFilter">Subcontrata</label>
+                <select id="subFilter">
+                  <option value="">Todas</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="stateFilter">Estado</label>
+                <select id="stateFilter">
+                  <option value="PENDIENTE">Pendientes</option>
+                  <option value="">Todos</option>
+                  <option value="VALIDADO">Validados</option>
+                  <option value="REVISAR">Revisar</option>
+                  <option value="RECHAZADO">Rechazados</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="partsContainer" class="empty">
+              Selecciona un día del calendario.
+            </div>
+          </div>
+
+        </div>
+
+        <div class="footer">Desarrollado por David Ferrando</div>
+      </div>
+
+      <iframe name="backendFrame" id="backendFrame" style="display:none;"></iframe>
+
+      <form id="backendForm" method="POST" target="backendFrame" style="display:none;">
+        <input name="action" id="f_action">
+        <input name="credential" id="f_credential">
+        <input name="month" id="f_month">
+        <input name="date" id="f_date">
+        <input name="rowNumber" id="f_rowNumber">
+        <input name="status" id="f_status">
+        <input name="observation" id="f_observation">
+        <input name="rowNumbersJson" id="f_rowNumbersJson">
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const GOOGLE_CLIENT_ID = '879636449979-tl4u210nduk4vbqdfj5hl151483m9qja.apps.googleusercontent.com';
+const BACKEND_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzANVYKwv2_R72_GlIEQ4hGyVqLBw_Oad5Xvh6lZ4vcsTYFpSPH0a-vOM8yMwwxo2RyUQ/exec';
+
+let googleCredential = '';
+let manager = null;
+let currentMonth = firstOfMonth(new Date());
+let selectedDate = dateKey(new Date());
+let monthActivity = {};
+let currentParts = [];
+let requestContext = null;
+
+window.addEventListener('load', () => {
+  document.getElementById('backendForm').action = BACKEND_WEBAPP_URL;
+
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredentialResponse,
+    auto_select: true,
+    cancel_on_tap_outside: false
+  });
+
+  google.accounts.id.renderButton(
+    document.getElementById('googleButton'),
+    {
+      theme:'outline',
+      size:'large',
+      text:'continue_with',
+      width:320
+    }
+  );
+
+  google.accounts.id.prompt();
+
+  document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
+  document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
+  document.getElementById('projectFilter').addEventListener('change', renderParts);
+  document.getElementById('subFilter').addEventListener('change', renderParts);
+  document.getElementById('stateFilter').addEventListener('change', renderParts);
+});
+
+function handleCredentialResponse(response) {
+  if (!response || !response.credential) {
+    showStatus('No se pudo obtener la identidad de Google.', 'err');
+    return;
+  }
+
+  googleCredential = response.credential;
+  showStatus('Validando acceso…', 'info');
+  postToBackend({
+    action:'adminBootstrap',
+    credential:googleCredential
+  });
+}
+
+function postToBackend(data, context = null) {
+  requestContext = context;
+
+  ['action','credential','month','date','rowNumber','status','observation','rowNumbersJson']
+    .forEach(k => {
+      const el = document.getElementById('f_' + k);
+      if (el) el.value = '';
+    });
+
+  Object.entries(data).forEach(([k,v]) => {
+    const el = document.getElementById('f_' + k);
+    if (el) el.value = v == null ? '' : String(v);
+  });
+
+  document.getElementById('backendForm').submit();
+}
+
+window.addEventListener('message', event => {
+  if (
+    event.origin !== 'https://script.google.com' &&
+    !event.origin.endsWith('.googleusercontent.com')
+  ) return;
+
+  const data = event.data || {};
+  if (data.source !== 'LEVITEC_BACKEND') return;
+
+  if (!data.ok) {
+    showStatus(data.message || 'Se ha producido un error.', 'err');
+    return;
+  }
+
+  if (data.type === 'adminBootstrap') {
+    manager = data;
+    document.getElementById('managerName').textContent = data.name;
+    document.getElementById('managerEmail').textContent = data.email;
+    document.getElementById('managerRole').textContent = data.role;
+    document.getElementById('loginBox').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    hideStatus();
+
+    loadMonth();
+    loadDay(selectedDate);
+    return;
+  }
+
+  if (data.type === 'adminMonth') {
+    monthActivity = {};
+    (data.days || []).forEach(d => monthActivity[d.date] = d);
+    renderCalendar();
+    return;
+  }
+
+  if (data.type === 'adminDay') {
+    currentParts = Array.isArray(data.parts) ? data.parts : [];
+    populateFilters();
+    updateSummary();
+    renderParts();
+    hideStatus();
+    return;
+  }
+
+  if (data.type === 'adminUpdate') {
+    const part = currentParts.find(p => Number(p.rowNumber) === Number(data.rowNumber));
+    if (part) {
+      part.status = data.status;
+      part.validatedBy = data.validatedBy || '';
+      part.observation = data.observation || '';
+    }
+
+    showStatus('Tarea actualizada correctamente.', 'ok');
+    updateSummary();
+    renderParts();
+    loadMonth();
+    return;
+  }
+
+  if (data.type === 'adminBulkValidate') {
+    showStatus(
+      (data.updated || 0) + ' tarea(s) pendiente(s) validadas.',
+      'ok'
+    );
+    loadDay(selectedDate);
+    loadMonth();
+  }
+});
+
+function loadMonth() {
+  if (!googleCredential) return;
+  postToBackend({
+    action:'adminMonth',
+    credential:googleCredential,
+    month:monthKey(currentMonth)
+  });
+}
+
+function loadDay(key) {
+  if (!googleCredential || !key) return;
+  selectedDate = key;
+  updateSelectedDateLabel();
+  renderCalendar();
+  showStatus('Cargando trabajos del día…', 'info');
+
+  postToBackend({
+    action:'adminDay',
+    credential:googleCredential,
+    date:key
+  });
+}
+
+function changeMonth(delta) {
+  currentMonth = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth() + delta,
+    1
+  );
+
+  loadMonth();
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const title = new Intl.DateTimeFormat('es-ES', {
+    month:'long',
+    year:'numeric'
+  }).format(currentMonth);
+
+  document.getElementById('calendarTitle').textContent = title;
+
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+
+  const first = new Date(year, month, 1);
+  const startOffset = (first.getDay() + 6) % 7;
+  const start = new Date(year, month, 1 - startOffset);
+
+  const today = dateKey(new Date());
+
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+    const key = dateKey(d);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'day';
+    btn.textContent = d.getDate();
+
+    if (d.getMonth() !== month) btn.classList.add('other');
+    if (key === selectedDate) btn.classList.add('selected');
+    if (key === today) btn.classList.add('today');
+
+    const activity = monthActivity[key];
+
+    if (activity && activity.count > 0) {
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      btn.appendChild(dot);
+
+      if (activity.pending > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'pending-dot';
+        badge.textContent = activity.pending > 9 ? '9+' : activity.pending;
+        btn.appendChild(badge);
+      }
+    }
+
+    btn.addEventListener('click', () => {
+      if (d.getMonth() !== currentMonth.getMonth() || d.getFullYear() !== currentMonth.getFullYear()) {
+        currentMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+        loadMonth();
+      }
+      loadDay(key);
+    });
+
+    grid.appendChild(btn);
+  }
+}
+
+function populateFilters() {
+  const project = document.getElementById('projectFilter');
+  const sub = document.getElementById('subFilter');
+
+  const oldProject = project.value;
+  const oldSub = sub.value;
+
+  const projects = uniqueSorted(currentParts.map(p => p.project));
+  const subs = uniqueSorted(currentParts.map(p => p.subcontractor));
+
+  project.innerHTML = '<option value="">Todos</option>' +
+    projects.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+
+  sub.innerHTML = '<option value="">Todas</option>' +
+    subs.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+
+  if (projects.includes(oldProject)) project.value = oldProject;
+  if (subs.includes(oldSub)) sub.value = oldSub;
+}
+
+function updateSummary() {
+  const workers = new Set(currentParts.map(p => p.email || p.worker)).size;
+  const tasks = currentParts.length;
+  const pending = currentParts.filter(p => p.status === 'PENDIENTE').length;
+
+  document.getElementById('workersSummary').textContent =
+    workers + (workers === 1 ? ' trabajador' : ' trabajadores');
+
+  document.getElementById('tasksSummary').textContent =
+    tasks + (tasks === 1 ? ' tarea' : ' tareas');
+
+  document.getElementById('pendingSummary').textContent =
+    pending + (pending === 1 ? ' pendiente' : ' pendientes');
+}
+
+function renderParts() {
+  const projectFilter = document.getElementById('projectFilter').value;
+  const subFilter = document.getElementById('subFilter').value;
+  const stateFilter = document.getElementById('stateFilter').value;
+
+  const filtered = currentParts.filter(p =>
+    (!projectFilter || p.project === projectFilter) &&
+    (!subFilter || p.subcontractor === subFilter) &&
+    (!stateFilter || p.status === stateFilter)
+  );
+
+  const container = document.getElementById('partsContainer');
+
+  if (!filtered.length) {
+    container.className = 'empty';
+    container.innerHTML = 'No hay tareas que coincidan con los filtros seleccionados.';
+    return;
+  }
+
+  container.className = '';
+  container.innerHTML = '';
+
+  const bySub = groupBy(filtered, p => p.subcontractor || 'SIN SUBCONTRATA');
+
+  Object.keys(bySub).sort(localeSort).forEach(subName => {
+    const subParts = bySub[subName];
+
+    const subGroup = document.createElement('section');
+    subGroup.className = 'sub-group';
+
+    const subHead = document.createElement('div');
+    subHead.className = 'sub-head';
+    subHead.innerHTML = `
+      <div class="sub-name">${escapeHtml(subName)}</div>
+      <div class="sub-count">${subParts.length} tarea(s)</div>
+    `;
+    subGroup.appendChild(subHead);
+
+    const byProject = groupBy(subParts, p => p.project || 'SIN PROYECTO');
+
+    Object.keys(byProject).sort(localeSort).forEach(projectName => {
+      const projectParts = byProject[projectName];
+
+      const projectGroup = document.createElement('div');
+      projectGroup.className = 'project-group';
+
+      const projectTitle = document.createElement('div');
+      projectTitle.className = 'project-title';
+      projectTitle.textContent = projectName;
+      projectGroup.appendChild(projectTitle);
+
+      const byWorkerBlock = groupBy(
+        projectParts,
+        p => [p.email, p.entry, p.exit].join('|')
+      );
+
+      Object.keys(byWorkerBlock).forEach(blockKey => {
+        const block = byWorkerBlock[blockKey];
+        projectGroup.appendChild(renderWorkerBlock(block));
+      });
+
+      subGroup.appendChild(projectGroup);
+    });
+
+    container.appendChild(subGroup);
+  });
+}
+
+function renderWorkerBlock(parts) {
+  const first = parts[0];
+  const worker = document.createElement('div');
+  worker.className = 'worker';
+
+  const pendingRows = parts
+    .filter(p => p.status === 'PENDIENTE')
+    .map(p => p.rowNumber);
+
+  const head = document.createElement('div');
+  head.className = 'worker-head';
+
+  const info = document.createElement('div');
+  info.innerHTML = `
+    <div class="worker-name">${escapeHtml(first.worker || first.email)}</div>
+    <div class="worker-time">
+      ${escapeHtml(first.entryTime || '--:--')} → ${escapeHtml(first.exitTime || '--:--')}
+      · ${escapeHtml(first.hours || '')} h
+    </div>
+  `;
+  head.appendChild(info);
+
+  if (pendingRows.length) {
+    const bulk = document.createElement('button');
+    bulk.type = 'button';
+    bulk.className = 'bulk-btn';
+    bulk.textContent = 'VALIDAR PENDIENTES';
+    bulk.addEventListener('click', () => bulkValidate(pendingRows));
+    head.appendChild(bulk);
+  }
+
+  worker.appendChild(head);
+
+  parts.forEach(part => {
+    worker.appendChild(renderTask(part));
+  });
+
+  return worker;
+}
+
+function renderTask(part) {
+  const el = document.createElement('div');
+  el.className = 'task';
+  el.dataset.row = part.rowNumber;
+
+  const existingObs = part.observation
+    ? `<div class="obs-existing"><strong>Observación:</strong> ${escapeHtml(part.observation)}</div>`
+    : '';
+
+  el.innerHTML = `
+    <div class="task-top">
+      <div>
+        <div class="task-title">${escapeHtml(part.task || 'Sin tarea')}</div>
+        ${part.zone ? `<div class="task-zone">Zona: ${escapeHtml(part.zone)}</div>` : ''}
+        ${part.description ? `<div class="task-desc">${escapeHtml(part.description)}</div>` : ''}
+      </div>
+      <span class="status-pill status-${part.status}">${escapeHtml(part.status)}</span>
+    </div>
+
+    ${existingObs}
+
+    <div class="actions">
+      <button type="button" class="action-btn action-valid" data-action="VALIDADO">VALIDAR</button>
+      <button type="button" class="action-btn action-review" data-action="REVISAR">REVISAR</button>
+      <button type="button" class="action-btn action-reject" data-action="RECHAZADO">RECHAZAR</button>
+    </div>
+
+    <div class="editor">
+      <label>Observación</label>
+      <textarea maxlength="500" placeholder="Indica el motivo o comentario…"></textarea>
+      <div class="editor-actions">
+        <button type="button" class="cancel-edit">CANCELAR</button>
+        <button type="button" class="save-edit">GUARDAR</button>
+      </div>
+    </div>
+  `;
+
+  el.querySelector('[data-action="VALIDADO"]').addEventListener('click', () => {
+    updateTask(part.rowNumber, 'VALIDADO', '');
+  });
+
+  el.querySelector('[data-action="REVISAR"]').addEventListener('click', () => {
+    openEditor(el, part, 'REVISAR');
+  });
+
+  el.querySelector('[data-action="RECHAZADO"]').addEventListener('click', () => {
+    openEditor(el, part, 'RECHAZADO');
+  });
+
+  el.querySelector('.cancel-edit').addEventListener('click', () => {
+    el.querySelector('.editor').classList.remove('open');
+  });
+
+  return el;
+}
+
+function openEditor(el, part, status) {
+  const editor = el.querySelector('.editor');
+  const textarea = editor.querySelector('textarea');
+  const save = editor.querySelector('.save-edit');
+
+  textarea.value = part.observation || '';
+  editor.classList.add('open');
+  textarea.focus();
+
+  save.onclick = () => {
+    const observation = textarea.value.trim();
+
+    if (!observation) {
+      showStatus('Debes indicar una observación para ' + status + '.', 'err');
+      return;
+    }
+
+    updateTask(part.rowNumber, status, observation);
+  };
+}
+
+function updateTask(rowNumber, status, observation) {
+  showStatus('Guardando validación…', 'info');
+
+  postToBackend({
+    action:'adminUpdate',
+    credential:googleCredential,
+    rowNumber:rowNumber,
+    status:status,
+    observation:observation
+  });
+}
+
+function bulkValidate(rows) {
+  if (!rows.length) return;
+
+  if (!confirm('¿Validar todas las tareas pendientes de este bloque?')) return;
+
+  showStatus('Validando tareas pendientes…', 'info');
+
+  postToBackend({
+    action:'adminBulkValidate',
+    credential:googleCredential,
+    rowNumbersJson:JSON.stringify(rows)
+  });
+}
+
+function updateSelectedDateLabel() {
+  const d = parseDateKey(selectedDate);
+  const label = new Intl.DateTimeFormat('es-ES', {
+    weekday:'long',
+    day:'numeric',
+    month:'long',
+    year:'numeric'
+  }).format(d);
+
+  document.getElementById('selectedDateLabel').textContent = label;
+}
+
+function showStatus(message, type) {
+  const el = document.getElementById('statusBox');
+  el.className = 'status-box ' + type;
+  el.textContent = message;
+}
+
+function hideStatus() {
+  const el = document.getElementById('statusBox');
+  el.className = 'status-box';
+  el.textContent = '';
+}
+
+function groupBy(items, keyFn) {
+  return items.reduce((acc, item) => {
+    const key = keyFn(item);
+    (acc[key] ||= []).push(item);
+    return acc;
+  }, {});
+}
+
+function uniqueSorted(values) {
+  return [...new Set(values.filter(Boolean))].sort(localeSort);
+}
+
+function localeSort(a,b) {
+  return String(a).localeCompare(String(b), 'es', {sensitivity:'base'});
+}
+
+function firstOfMonth(d) {
+  return new Date(d.getFullYear(), d.getMonth(), 1);
+}
+
+function dateKey(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
+function monthKey(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2,'0');
+  return `${y}-${m}`;
+}
+
+function parseDateKey(key) {
+  const [y,m,d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+</script>
+
+</body>
+</html>
