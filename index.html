@@ -5,45 +5,155 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LEVITEC · Control horario</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <style>
     :root { font-family: Arial, sans-serif; }
-    body { margin:0; background:#f5f6f8; color:#202124; }
-    .wrap { max-width:520px; margin:0 auto; padding:22px 16px 40px; }
-    .card { background:#fff; border-radius:14px; padding:22px; box-shadow:0 2px 14px rgba(0,0,0,.08); }
-    h1 { margin:0 0 14px; font-size:22px; }
-    .identity { background:#f7f8fa; border-radius:10px; padding:14px; margin:16px 0; }
-    .name { font-weight:700; font-size:17px; }
-    .meta { margin-top:3px; font-size:13px; color:#5f6368; }
-    label { display:block; margin-top:14px; font-size:13px; font-weight:700; }
-    select { width:100%; box-sizing:border-box; margin-top:6px; padding:12px; border:1px solid #dadce0; border-radius:8px; font-size:16px; background:#fff; }
-    .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px; }
-    button { border:0; border-radius:10px; padding:15px 9px; font-size:14px; font-weight:700; cursor:pointer; }
-    button:disabled { opacity:.45; cursor:not-allowed; }
-    .entry { background:#e6f4ea; }
-    .break { background:#fff4ce; }
-    .exit { background:#fce8e6; }
-    .status { margin-top:16px; padding:12px; border-radius:8px; white-space:pre-line; display:none; }
-    .ok { background:#e6f4ea; }
-    .err { background:#fce8e6; }
-    .info { background:#e8f0fe; }
-    .small { margin-top:14px; font-size:12px; line-height:1.4; color:#5f6368; }
-    #app { display:none; }
-    #loginBox { margin-top:16px; }
+
+    body {
+      margin:0;
+      background:#f5f6f8;
+      color:#202124;
+    }
+
+    .wrap {
+      max-width:520px;
+      margin:0 auto;
+      padding:22px 16px 40px;
+    }
+
+    .card {
+      background:#fff;
+      border-radius:14px;
+      padding:22px;
+      box-shadow:0 2px 14px rgba(0,0,0,.08);
+    }
+
+    h1 {
+      margin:0 0 14px;
+      font-size:22px;
+    }
+
+    .identity {
+      background:#f7f8fa;
+      border-radius:10px;
+      padding:14px;
+      margin:16px 0;
+    }
+
+    .name {
+      font-weight:700;
+      font-size:17px;
+    }
+
+    .meta {
+      margin-top:3px;
+      font-size:13px;
+      color:#5f6368;
+    }
+
+    label {
+      display:block;
+      margin-top:14px;
+      font-size:13px;
+      font-weight:700;
+    }
+
+    select {
+      width:100%;
+      box-sizing:border-box;
+      margin-top:6px;
+      padding:12px;
+      border:1px solid #dadce0;
+      border-radius:8px;
+      font-size:16px;
+      background:#fff;
+    }
+
+    .grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:18px;
+    }
+
+    button {
+      border:0;
+      border-radius:10px;
+      padding:15px 9px;
+      font-size:14px;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    button:disabled {
+      opacity:.45;
+      cursor:not-allowed;
+    }
+
+    .entry {
+      background:#e6f4ea;
+    }
+
+    .exit {
+      background:#fce8e6;
+    }
+
+    .status {
+      margin-top:16px;
+      padding:12px;
+      border-radius:8px;
+      white-space:pre-line;
+      display:none;
+    }
+
+    .ok {
+      background:#e6f4ea;
+    }
+
+    .err {
+      background:#fce8e6;
+    }
+
+    .info {
+      background:#e8f0fe;
+    }
+
+    .small {
+      margin-top:14px;
+      font-size:12px;
+      line-height:1.4;
+      color:#5f6368;
+    }
+
+    #app {
+      display:none;
+    }
+
+    #loginBox {
+      margin-top:16px;
+    }
   </style>
 </head>
+
 <body>
+
 <div class="wrap">
   <div class="card">
+
     <h1>LEVITEC · Control horario</h1>
 
     <div id="status" class="status info"></div>
 
     <div id="loginBox">
-      <div class="small" style="margin-bottom:12px;">Identifícate con la Cuenta de Google asociada a tu ficha de trabajador.</div>
+      <div class="small" style="margin-bottom:12px;">
+        Identifícate con la Cuenta de Google asociada a tu ficha de trabajador.
+      </div>
+
       <div id="googleButton"></div>
     </div>
 
     <div id="app">
+
       <div class="identity">
         <div class="name" id="workerName"></div>
         <div class="meta" id="workerEmail"></div>
@@ -51,20 +161,40 @@
       </div>
 
       <label>Proyecto</label>
+
       <select id="project">
         <option value="">Selecciona proyecto</option>
       </select>
 
-   <div class="grid">
-  <button class="entry" onclick="punch('ENTRADA')">ENTRADA</button>
-  <button class="exit" onclick="punch('SALIDA')">SALIDA</button>
-</div>
+      <div class="grid">
+        <button class="entry" onclick="punch('ENTRADA')">
+          ENTRADA
+        </button>
 
-      <div class="small">La identidad procede de Google y no puede editarse. La ubicación se solicita únicamente al realizar un fichaje.</div>
+        <button class="exit" onclick="punch('SALIDA')">
+          SALIDA
+        </button>
+      </div>
+
+      <div class="small">
+        La identidad procede de Google y no puede editarse.
+        La ubicación se solicita únicamente al realizar un fichaje.
+      </div>
+
     </div>
 
-    <iframe name="backendFrame" id="backendFrame" style="display:none;"></iframe>
-    <form id="backendForm" method="POST" target="backendFrame" style="display:none;">
+    <iframe
+      name="backendFrame"
+      id="backendFrame"
+      style="display:none;">
+    </iframe>
+
+    <form
+      id="backendForm"
+      method="POST"
+      target="backendFrame"
+      style="display:none;">
+
       <input name="action" id="f_action">
       <input name="credential" id="f_credential">
       <input name="token" id="f_token">
@@ -73,13 +203,20 @@
       <input name="lat" id="f_lat">
       <input name="lon" id="f_lon">
       <input name="accuracy" id="f_accuracy">
+
     </form>
+
   </div>
 </div>
 
+
 <script>
-const GOOGLE_CLIENT_ID = '879636449979-tl4u210nduk4vbqdfj5hl151483m9qja.apps.googleusercontent.com';
-const BACKEND_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzANVYKwv2_R72_GlIEQ4hGyVqLBw_Oad5Xvh6lZ4vcsTYFpSPH0a-vOM8yMwwxo2RyUQ/exec';
+
+const GOOGLE_CLIENT_ID =
+  '879636449979-tl4u210nduk4vbqdfj5hl151483m9qja.apps.googleusercontent.com';
+
+const BACKEND_WEBAPP_URL =
+  'https://script.google.com/macros/s/AKfycbzANVYKwv2_R72_GlIEQ4hGyVqLBw_Oad5Xvh6lZ4vcsTYFpSPH0a-vOM8yMwwxo2RyUQ/exec';
 
 const params = new URLSearchParams(window.location.search);
 const TOKEN = (params.get('sc') || '').trim();
@@ -87,13 +224,23 @@ const TOKEN = (params.get('sc') || '').trim();
 let googleCredential = '';
 let busy = false;
 
+
+/* =========================================================
+   INICIO
+========================================================= */
+
 window.addEventListener('load', () => {
+
   if (!TOKEN) {
-    show('QR no válido: falta el identificador de subcontrata.', 'err');
+    show(
+      'QR no válido: falta el identificador de subcontrata.',
+      'err'
+    );
     return;
   }
 
-  document.getElementById('backendForm').action = BACKEND_WEBAPP_URL;
+  document.getElementById('backendForm').action =
+    BACKEND_WEBAPP_URL;
 
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
@@ -104,139 +251,515 @@ window.addEventListener('load', () => {
 
   google.accounts.id.renderButton(
     document.getElementById('googleButton'),
-    { theme:'outline', size:'large', text:'continue_with', width:320 }
+    {
+      theme:'outline',
+      size:'large',
+      text:'continue_with',
+      width:320
+    }
   );
 
   google.accounts.id.prompt();
+
 });
 
+
+/* =========================================================
+   LOGIN GOOGLE
+========================================================= */
+
 function handleCredentialResponse(response) {
+
   if (!response || !response.credential) {
-    show('No se pudo obtener la identidad de Google.', 'err');
+    show(
+      'No se pudo obtener la identidad de Google.',
+      'err'
+    );
     return;
   }
 
   googleCredential = response.credential;
-  show('Validando trabajador y subcontrata…', 'info');
+
+  show(
+    'Validando trabajador y subcontrata…',
+    'info'
+  );
 
   postToBackend({
     action:'bootstrap',
     credential:googleCredential,
     token:TOKEN
   });
+
 }
 
-function punch(movement) {
-  if (busy) return;
-  if (!googleCredential) return show('Vuelve a identificarte con Google.', 'err');
 
-  const project = document.getElementById('project').value;
-  if (!project) return show('Selecciona un proyecto.', 'err');
+/* =========================================================
+   GPS DE ALTA PRECISIÓN
+========================================================= */
 
-  if (!navigator.geolocation) {
-    return show('Este dispositivo no permite obtener ubicación.', 'err');
-  }
+function getAccuratePosition(
+  maxAccuracy = 100,
+  timeoutMs = 25000
+) {
 
-  busy = true;
-  setButtons(true);
-  show('Comprobando ubicación…', 'info');
+  return new Promise((resolve, reject) => {
 
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      postToBackend({
-        action:'punch',
-        credential:googleCredential,
-        token:TOKEN,
-        project,
-        movement,
-        lat:pos.coords.latitude,
-        lon:pos.coords.longitude,
-        accuracy:pos.coords.accuracy
-      });
-    },
-    err => {
-      busy = false;
-      setButtons(false);
+    let bestPosition = null;
+    let watchId = null;
+    let finished = false;
 
-      let msg = 'No se pudo obtener la ubicación.';
-      if (err.code === 1) msg = 'Debes permitir el acceso a la ubicación para fichar.';
-      if (err.code === 2) msg = 'Ubicación no disponible. Activa GPS/ubicación precisa e inténtalo de nuevo.';
-      if (err.code === 3) msg = 'La ubicación ha tardado demasiado. Inténtalo de nuevo.';
-      show(msg, 'err');
-    },
-    { enableHighAccuracy:true, timeout:30000, maximumAge:5000 }
-  );
-}
+    function finishWithSuccess(pos) {
 
-function postToBackend(data) {
-  Object.entries(data).forEach(([k,v]) => {
-    const el = document.getElementById('f_' + k);
-    if (el) el.value = v == null ? '' : String(v);
+      if (finished) return;
+
+      finished = true;
+
+      clearTimeout(timer);
+
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+
+      resolve(pos);
+    }
+
+
+    function finishWithError(error) {
+
+      if (finished) return;
+
+      finished = true;
+
+      clearTimeout(timer);
+
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+
+      reject(error);
+    }
+
+
+    const timer = setTimeout(() => {
+
+      if (bestPosition) {
+
+        finishWithError(
+          new Error(
+            'No se ha conseguido suficiente precisión GPS.\n' +
+            'Mejor precisión obtenida: ±' +
+            Math.round(bestPosition.coords.accuracy) +
+            ' m.\n\n' +
+            'Activa la ubicación precisa y vuelve a intentarlo.'
+          )
+        );
+
+      } else {
+
+        finishWithError(
+          new Error(
+            'No se ha podido obtener la ubicación.\n' +
+            'Comprueba que el GPS esté activado.'
+          )
+        );
+
+      }
+
+    }, timeoutMs);
+
+
+    watchId = navigator.geolocation.watchPosition(
+
+      pos => {
+
+        const accuracy = pos.coords.accuracy;
+
+        if (
+          !bestPosition ||
+          accuracy < bestPosition.coords.accuracy
+        ) {
+
+          bestPosition = pos;
+
+          show(
+            'Buscando ubicación precisa…\n' +
+            'Precisión actual: ±' +
+            Math.round(accuracy) +
+            ' m',
+            'info'
+          );
+
+        }
+
+        if (accuracy <= maxAccuracy) {
+          finishWithSuccess(pos);
+        }
+
+      },
+
+
+      err => {
+
+        let msg =
+          'No se pudo obtener la ubicación.';
+
+        if (err.code === 1) {
+          msg =
+            'Debes permitir el acceso a la ubicación para fichar.';
+        }
+
+        if (err.code === 2) {
+          msg =
+            'Ubicación no disponible. Activa GPS y ubicación precisa e inténtalo de nuevo.';
+        }
+
+        if (err.code === 3) {
+          msg =
+            'La ubicación ha tardado demasiado. Inténtalo de nuevo.';
+        }
+
+        finishWithError(
+          new Error(msg)
+        );
+
+      },
+
+
+      {
+        enableHighAccuracy:true,
+        maximumAge:0,
+        timeout:25000
+      }
+
+    );
+
   });
 
-  document.getElementById('backendForm').submit();
 }
 
-window.addEventListener('message', event => {
-  if (event.origin !== 'https://script.google.com' && !event.origin.endsWith('.googleusercontent.com')) return;
 
-  const data = event.data || {};
-  if (data.source !== 'LEVITEC_BACKEND') return;
+/* =========================================================
+   FICHAJE
+========================================================= */
 
-  if (data.type === 'bootstrap') {
-    if (!data.ok) {
-      show(data.message || 'No autorizado.', 'err');
-      return;
-    }
+async function punch(movement) {
 
-    document.getElementById('workerName').textContent = data.worker;
-    document.getElementById('workerEmail').textContent = data.email;
-    document.getElementById('subcontractor').textContent = data.subcontractor;
+  if (busy) return;
 
-    const sel = document.getElementById('project');
-    sel.innerHTML = '<option value="">Selecciona proyecto</option>';
-
-    (data.projects || []).forEach(p => {
-      const o = document.createElement('option');
-      o.value = p.code;
-      o.textContent = p.code;
-      sel.appendChild(o);
-    });
-
-    document.getElementById('loginBox').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    document.getElementById('status').style.display = 'none';
-  }
-
-  if (data.type === 'punch') {
-    busy = false;
-    setButtons(false);
-
-    if (!data.ok) {
-      show(data.message || 'No se pudo registrar el fichaje.', 'err');
-      return;
-    }
+  if (!googleCredential) {
 
     show(
-      data.message + '\n' +
-      data.time + '\n' +
-      data.worker + ' · ' + data.project + '\n' +
-      'Distancia: ' + data.distance + ' m · Precisión: ±' + data.accuracy + ' m',
-      'ok'
+      'Vuelve a identificarte con Google.',
+      'err'
     );
+
+    return;
   }
-});
+
+
+  const project =
+    document.getElementById('project').value;
+
+  if (!project) {
+
+    show(
+      'Selecciona un proyecto.',
+      'err'
+    );
+
+    return;
+  }
+
+
+  if (!navigator.geolocation) {
+
+    show(
+      'Este dispositivo no permite obtener ubicación.',
+      'err'
+    );
+
+    return;
+  }
+
+
+  busy = true;
+
+  setButtons(true);
+
+  show(
+    'Buscando ubicación precisa…',
+    'info'
+  );
+
+
+  try {
+
+    const pos =
+      await getAccuratePosition(100, 25000);
+
+
+    show(
+      'Ubicación válida.\n' +
+      'Precisión: ±' +
+      Math.round(pos.coords.accuracy) +
+      ' m\n' +
+      'Registrando fichaje…',
+      'info'
+    );
+
+
+    postToBackend({
+      action:'punch',
+      credential:googleCredential,
+      token:TOKEN,
+      project:project,
+      movement:movement,
+      lat:pos.coords.latitude,
+      lon:pos.coords.longitude,
+      accuracy:pos.coords.accuracy
+    });
+
+
+  } catch (err) {
+
+    busy = false;
+
+    setButtons(false);
+
+    show(
+      err && err.message
+        ? err.message
+        : 'No se pudo obtener una ubicación válida.',
+      'err'
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   ENVÍO AL BACKEND
+========================================================= */
+
+function postToBackend(data) {
+
+  Object.entries(data).forEach(
+    ([k,v]) => {
+
+      const el =
+        document.getElementById('f_' + k);
+
+      if (el) {
+        el.value =
+          v == null ? '' : String(v);
+      }
+
+    }
+  );
+
+  document
+    .getElementById('backendForm')
+    .submit();
+
+}
+
+
+/* =========================================================
+   RESPUESTA DEL BACKEND
+========================================================= */
+
+window.addEventListener(
+  'message',
+  event => {
+
+    if (
+      event.origin !==
+        'https://script.google.com' &&
+      !event.origin.endsWith(
+        '.googleusercontent.com'
+      )
+    ) {
+      return;
+    }
+
+
+    const data =
+      event.data || {};
+
+
+    if (
+      data.source !==
+      'LEVITEC_BACKEND'
+    ) {
+      return;
+    }
+
+
+    /* ---------- BOOTSTRAP ---------- */
+
+    if (data.type === 'bootstrap') {
+
+      if (!data.ok) {
+
+        show(
+          data.message ||
+          'No autorizado.',
+          'err'
+        );
+
+        return;
+
+      }
+
+
+      document
+        .getElementById('workerName')
+        .textContent =
+        data.worker;
+
+
+      document
+        .getElementById('workerEmail')
+        .textContent =
+        data.email;
+
+
+      document
+        .getElementById('subcontractor')
+        .textContent =
+        data.subcontractor;
+
+
+      const sel =
+        document.getElementById('project');
+
+
+      sel.innerHTML =
+        '<option value="">Selecciona proyecto</option>';
+
+
+      (data.projects || [])
+        .forEach(p => {
+
+          const o =
+            document.createElement('option');
+
+          o.value =
+            p.code;
+
+          o.textContent =
+            p.code;
+
+          sel.appendChild(o);
+
+        });
+
+
+      document
+        .getElementById('loginBox')
+        .style.display =
+        'none';
+
+
+      document
+        .getElementById('app')
+        .style.display =
+        'block';
+
+
+      document
+        .getElementById('status')
+        .style.display =
+        'none';
+
+    }
+
+
+    /* ---------- FICHAJE ---------- */
+
+    if (data.type === 'punch') {
+
+      busy = false;
+
+      setButtons(false);
+
+
+      if (!data.ok) {
+
+        show(
+          data.message ||
+          'No se pudo registrar el fichaje.',
+          'err'
+        );
+
+        return;
+
+      }
+
+
+      show(
+
+        data.message + '\n' +
+
+        data.time + '\n' +
+
+        data.worker +
+        ' · ' +
+        data.project +
+        '\n' +
+
+        'Distancia: ' +
+        data.distance +
+        ' m · Precisión: ±' +
+        data.accuracy +
+        ' m',
+
+        'ok'
+
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   UTILIDADES
+========================================================= */
 
 function setButtons(disabled) {
-  document.querySelectorAll('button').forEach(b => b.disabled = disabled);
+
+  document
+    .querySelectorAll('button')
+    .forEach(
+      b =>
+        b.disabled =
+        disabled
+    );
+
 }
 
+
 function show(msg, cls) {
-  const el = document.getElementById('status');
-  el.className = 'status ' + cls;
-  el.textContent = msg;
-  el.style.display = 'block';
+
+  const el =
+    document.getElementById('status');
+
+  el.className =
+    'status ' + cls;
+
+  el.textContent =
+    msg;
+
+  el.style.display =
+    'block';
+
 }
+
 </script>
+
 </body>
 </html>
