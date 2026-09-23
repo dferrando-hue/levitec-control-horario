@@ -808,6 +808,16 @@ window.addEventListener('message', event => {
 
   if (!data.ok) {
     showStatus(data.message || 'Se ha producido un error.', 'err');
+
+    // Si una actualización optimista falla, recargamos el día
+    // para devolver la interfaz al estado real guardado en Sheets.
+    if (
+      data.type === 'adminUpdate' ||
+      data.type === 'adminBulkValidate'
+    ) {
+      setTimeout(() => loadDay(selectedDate), 700);
+    }
+
     return;
   }
 
@@ -842,16 +852,22 @@ window.addEventListener('message', event => {
   }
 
   if (data.type === 'adminUpdate') {
-    const part = currentParts.find(p => Number(p.rowNumber) === Number(data.rowNumber));
+    const part = currentParts.find(
+      p => Number(p.rowNumber) === Number(data.rowNumber)
+    );
+
     if (part) {
       part.status = data.status;
       part.validatedBy = data.validatedBy || '';
       part.observation = data.observation || '';
+      part._saving = false;
     }
 
-    showStatus('Tarea actualizada correctamente.', 'ok');
+    showStatus('Tarea guardada correctamente.', 'ok');
+
+    // El cambio visual ya se hizo al pulsar.
+    // Solo refrescamos los indicadores del calendario.
     updateSummary();
-    renderParts();
     loadMonth();
     return;
   }
@@ -861,7 +877,9 @@ window.addEventListener('message', event => {
       (data.updated || 0) + ' tarea(s) pendiente(s) validadas.',
       'ok'
     );
-    loadDay(selectedDate);
+
+    currentParts.forEach(p => p._saving = false);
+    updateSummary();
     loadMonth();
   }
 });
@@ -1181,7 +1199,27 @@ function openEditor(el, part, status) {
 }
 
 function updateTask(rowNumber, status, observation) {
-  showStatus('Guardando validación…', 'info');
+
+  const part = currentParts.find(
+    p => Number(p.rowNumber) === Number(rowNumber)
+  );
+
+  if (!part || part._saving) return;
+
+  // Actualización optimista:
+  // el usuario ve el cambio de forma inmediata, sin esperar a Sheets.
+  part.status = status;
+  part.observation = observation || '';
+  part.validatedBy =
+    status === 'PENDIENTE'
+      ? ''
+      : (manager && manager.email ? manager.email : '');
+  part._saving = true;
+
+  updateSummary();
+  renderParts();
+
+  showStatus('Guardando cambio…', 'info');
 
   postToBackend({
     action:'adminUpdate',
@@ -1197,7 +1235,26 @@ function bulkValidate(rows) {
 
   if (!confirm('¿Validar todas las tareas pendientes de este bloque?')) return;
 
-  showStatus('Validando tareas pendientes…', 'info');
+  const rowSet = new Set(rows.map(Number));
+
+  currentParts.forEach(part => {
+    if (
+      rowSet.has(Number(part.rowNumber)) &&
+      part.status === 'PENDIENTE'
+    ) {
+      part.status = 'VALIDADO';
+      part.validatedBy =
+        manager && manager.email ? manager.email : '';
+      part.observation = '';
+      part._saving = true;
+    }
+  });
+
+  // Desaparecen al instante si el filtro activo es PENDIENTES.
+  updateSummary();
+  renderParts();
+
+  showStatus('Guardando validaciones…', 'info');
 
   postToBackend({
     action:'adminBulkValidate',
@@ -1277,6 +1334,9 @@ function escapeHtml(value) {
     .replace(/'/g,'&#039;');
 }
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
