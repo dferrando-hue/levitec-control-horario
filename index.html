@@ -245,6 +245,129 @@
       letter-spacing: .15px;
     }
 
+
+    .task-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      background: rgba(24, 32, 38, .42);
+      padding: 14px;
+    }
+
+    .task-modal.open {
+      display: flex;
+    }
+
+    .task-sheet {
+      width: 100%;
+      max-width: 470px;
+      max-height: 88vh;
+      overflow-y: auto;
+      background: #fff;
+      border-radius: 20px;
+      padding: 22px 18px 18px;
+      box-shadow: 0 22px 60px rgba(20,30,36,.24);
+    }
+
+    .task-sheet h2 {
+      margin: 0;
+      font-size: 20px;
+      color: var(--text);
+    }
+
+    .task-sheet-intro {
+      margin: 6px 0 16px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .task-row {
+      position: relative;
+      margin-top: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #fafbfb;
+    }
+
+    .task-row-title {
+      margin-bottom: 3px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #34414b;
+    }
+
+    .task-row label {
+      margin-top: 11px;
+    }
+
+    .task-description-block {
+      display: none;
+    }
+
+    .task-description-block.visible {
+      display: block;
+    }
+
+    .task-remove {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border-radius: 50%;
+      background: #f1f3f4;
+      color: #67717a;
+      border: 1px solid #e2e6e8;
+      font-size: 16px;
+      line-height: 28px;
+    }
+
+    .task-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .add-task {
+      width: 100%;
+      margin-top: 14px;
+      background: var(--levitec-soft);
+      color: var(--levitec);
+      border: 1px solid rgba(0,124,122,.16);
+    }
+
+    .task-cancel {
+      background: #f4f5f6;
+      color: #46515a;
+      border: 1px solid #dde2e5;
+    }
+
+    .task-confirm {
+      background: var(--levitec);
+      color: #fff;
+      box-shadow: 0 6px 14px rgba(0,124,122,.18);
+    }
+
+    .task-counter {
+      margin-top: 9px;
+      text-align: right;
+      font-size: 10px;
+      color: #8a939a;
+    }
+
+    @media (min-width: 520px) {
+      .task-modal {
+        align-items: center;
+      }
+    }
+
     @media (max-width: 480px) {
       .wrap {
         padding: 20px 12px 28px;
@@ -333,6 +456,33 @@
 
     </div>
 
+
+    <div id="taskModal" class="task-modal" aria-hidden="true">
+      <div class="task-sheet">
+        <h2>Trabajo realizado</h2>
+        <div class="task-sheet-intro">
+          Indica las tareas realizadas durante este periodo antes de registrar la salida.
+        </div>
+
+        <div id="taskRows"></div>
+
+        <button type="button" class="add-task" id="addTaskButton" onclick="addTaskRow()">
+          + AÑADIR OTRA TAREA
+        </button>
+
+        <div class="task-counter" id="taskCounter">1 de 5 tareas</div>
+
+        <div class="task-actions">
+          <button type="button" class="task-cancel" onclick="closeTaskModal()">
+            CANCELAR
+          </button>
+          <button type="button" class="task-confirm" onclick="confirmExitTasks()">
+            CONFIRMAR SALIDA
+          </button>
+        </div>
+      </div>
+    </div>
+
     <iframe
       name="backendFrame"
       id="backendFrame"
@@ -354,6 +504,7 @@
       <input name="lon" id="f_lon">
       <input name="accuracy" id="f_accuracy">
       <input name="subcontractorDetail" id="f_subcontractorDetail">
+      <input name="tasksJson" id="f_tasksJson">
 
     </form>
 
@@ -375,6 +526,8 @@ const TOKEN = (params.get('sc') || '').trim();
 let googleCredential = '';
 let busy = false;
 let currentSubcontractor = '';
+let availableTasks = [];
+const MAX_TASKS = 5;
 
 
 /* =========================================================
@@ -595,34 +748,28 @@ function getAccuratePosition(
    FICHAJE
 ========================================================= */
 
-async function punch(movement) {
+function validateBasicPunchData() {
 
-  if (busy) return;
+  if (busy) return null;
 
   if (!googleCredential) {
-
     show(
       'Vuelve a identificarte con Google.',
       'err'
     );
-
-    return;
+    return null;
   }
-
 
   const project =
     document.getElementById('project').value;
 
   if (!project) {
-
     show(
       'Selecciona un proyecto.',
       'err'
     );
-
-    return;
+    return null;
   }
-
 
   const subcontractorDetailInput =
     document.getElementById('subcontractorDetail');
@@ -636,29 +783,57 @@ async function punch(movement) {
     currentSubcontractor === 'NO LISTADO' &&
     !subcontractorDetail
   ) {
-
     show(
       'Indica el nombre de la subcontrata.',
       'err'
     );
+    return null;
+  }
 
+  return {
+    project,
+    subcontractorDetail
+  };
+}
+
+
+function punch(movement) {
+
+  const basic = validateBasicPunchData();
+  if (!basic) return;
+
+  if (movement === 'SALIDA') {
+
+    if (!availableTasks.length) {
+      show(
+        'No hay tareas activas configuradas para esta subcontrata.',
+        'err'
+      );
+      return;
+    }
+
+    openTaskModal();
     return;
   }
 
+  performPunch('ENTRADA', []);
+}
+
+
+async function performPunch(movement, tasks) {
+
+  const basic = validateBasicPunchData();
+  if (!basic) return;
 
   if (!navigator.geolocation) {
-
     show(
       'Este dispositivo no permite obtener ubicación.',
       'err'
     );
-
     return;
   }
 
-
   busy = true;
-
   setButtons(true);
 
   show(
@@ -666,40 +841,40 @@ async function punch(movement) {
     'info'
   );
 
-
   try {
 
     const pos =
       await getAccuratePosition(100, 25000);
 
-
     show(
-      'Ubicación válida.\n' +
+      'Ubicación válida.
+' +
       'Precisión: ±' +
       Math.round(pos.coords.accuracy) +
-      ' m\n' +
+      ' m
+' +
       'Registrando fichaje…',
       'info'
     );
-
 
     postToBackend({
       action:'punch',
       credential:googleCredential,
       token:TOKEN,
-      project:project,
+      project:basic.project,
       movement:movement,
-      subcontractorDetail:subcontractorDetail,
+      subcontractorDetail:basic.subcontractorDetail,
+      tasksJson:movement === 'SALIDA'
+        ? JSON.stringify(tasks)
+        : '',
       lat:pos.coords.latitude,
       lon:pos.coords.longitude,
       accuracy:pos.coords.accuracy
     });
 
-
   } catch (err) {
 
     busy = false;
-
     setButtons(false);
 
     show(
@@ -708,9 +883,218 @@ async function punch(movement) {
         : 'No se pudo obtener una ubicación válida.',
       'err'
     );
+  }
+}
 
+
+/* =========================================================
+   TAREAS DE SALIDA
+========================================================= */
+
+function openTaskModal() {
+
+  const rows = document.getElementById('taskRows');
+  rows.innerHTML = '';
+
+  addTaskRow();
+
+  const modal = document.getElementById('taskModal');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+
+function closeTaskModal() {
+
+  const modal = document.getElementById('taskModal');
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+
+function addTaskRow() {
+
+  const container = document.getElementById('taskRows');
+  const count = container.querySelectorAll('.task-row').length;
+
+  if (count >= MAX_TASKS) return;
+
+  const row = document.createElement('div');
+  row.className = 'task-row';
+
+  row.innerHTML = `
+    <div class="task-row-title">Tarea ${count + 1}</div>
+
+    ${count > 0 ? `
+      <button
+        type="button"
+        class="task-remove"
+        aria-label="Eliminar tarea"
+        onclick="removeTaskRow(this)">×</button>
+    ` : ''}
+
+    <label>Tarea</label>
+    <select class="work-task" onchange="handleTaskTypeChange(this)">
+      <option value="">Selecciona tarea</option>
+      ${availableTasks.map(task =>
+        `<option value="${escapeHtml(task)}">${escapeHtml(task)}</option>`
+      ).join('')}
+    </select>
+
+    <div class="task-description-block">
+      <label>Descripción</label>
+      <input
+        type="text"
+        class="work-description"
+        maxlength="250"
+        placeholder="Describe brevemente el trabajo realizado">
+    </div>
+
+    <label>Zona</label>
+    <input
+      type="text"
+      class="work-zone"
+      maxlength="100"
+      placeholder="Ej.: Electrical Room 2, Offices, Roof...">
+  `;
+
+  container.appendChild(row);
+  refreshTaskRows();
+}
+
+
+function removeTaskRow(button) {
+
+  const row = button.closest('.task-row');
+  if (row) row.remove();
+
+  refreshTaskRows();
+}
+
+
+function refreshTaskRows() {
+
+  const rows =
+    [...document.querySelectorAll('#taskRows .task-row')];
+
+  rows.forEach((row, index) => {
+    const title = row.querySelector('.task-row-title');
+    if (title) title.textContent = 'Tarea ' + (index + 1);
+  });
+
+  const count = rows.length;
+
+  document.getElementById('taskCounter').textContent =
+    count + ' de ' + MAX_TASKS + ' tareas';
+
+  document.getElementById('addTaskButton').style.display =
+    count >= MAX_TASKS ? 'none' : 'block';
+}
+
+
+function handleTaskTypeChange(select) {
+
+  const row = select.closest('.task-row');
+  if (!row) return;
+
+  const block =
+    row.querySelector('.task-description-block');
+
+  const input =
+    row.querySelector('.work-description');
+
+  const isOther =
+    String(select.value || '')
+      .trim()
+      .toUpperCase() === 'OTRO';
+
+  block.classList.toggle('visible', isOther);
+
+  if (!isOther) {
+    input.value = '';
+  }
+}
+
+
+function collectWorkTasks() {
+
+  const rows =
+    [...document.querySelectorAll('#taskRows .task-row')];
+
+  if (!rows.length) {
+    throw new Error('Indica al menos una tarea realizada.');
   }
 
+  return rows.map((row, index) => {
+
+    const task =
+      row.querySelector('.work-task').value.trim();
+
+    const description =
+      row.querySelector('.work-description').value.trim();
+
+    const zone =
+      row.querySelector('.work-zone').value.trim();
+
+    if (!task) {
+      throw new Error(
+        'Selecciona la tarea ' + (index + 1) + '.'
+      );
+    }
+
+    if (
+      task.toUpperCase() === 'OTRO' &&
+      !description
+    ) {
+      throw new Error(
+        'Describe la tarea ' + (index + 1) +
+        ' porque has seleccionado OTRO.'
+      );
+    }
+
+    return {
+      task,
+      description:
+        task.toUpperCase() === 'OTRO'
+          ? description
+          : '',
+      zone
+    };
+  });
+}
+
+
+function confirmExitTasks() {
+
+  try {
+
+    const tasks = collectWorkTasks();
+
+    closeTaskModal();
+
+    performPunch('SALIDA', tasks);
+
+  } catch (err) {
+
+    show(
+      err && err.message
+        ? err.message
+        : 'Revisa las tareas indicadas.',
+      'err'
+    );
+  }
+}
+
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 
@@ -811,6 +1195,14 @@ window.addEventListener(
         String(data.subcontractor || '')
           .trim()
           .toUpperCase();
+
+
+      availableTasks =
+        Array.isArray(data.tasks)
+          ? data.tasks
+              .map(t => String(t || '').trim())
+              .filter(Boolean)
+          : [];
 
 
       const detailBlock =
@@ -915,7 +1307,10 @@ window.addEventListener(
         data.distance +
         ' m · Precisión: ±' +
         data.accuracy +
-        ' m',
+        ' m' +
+        (data.tasksSaved
+          ? '\nTareas registradas: ' + data.tasksSaved
+          : ''),
 
         'ok'
 
@@ -956,6 +1351,14 @@ function show(msg, cls) {
     msg;
 
   el.style.display =
+    'block';
+
+}
+
+</script>
+
+</body>
+</html>
     'block';
 
 }
