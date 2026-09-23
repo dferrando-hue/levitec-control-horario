@@ -303,6 +303,74 @@
       background:#fff;
     }
 
+    .summary-pill strong {
+      color:var(--text);
+    }
+
+    .quick-tools {
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin:-2px 0 14px;
+    }
+
+    .quick-toggle {
+      min-height:36px;
+      padding:8px 11px;
+      border:1px solid var(--line);
+      border-radius:9px;
+      background:#fff;
+      color:#59646c;
+      font-size:10px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .quick-toggle.active {
+      background:var(--levitec-soft);
+      color:var(--levitec);
+      border-color:rgba(0,124,122,.25);
+    }
+
+    .sub-stats {
+      margin-top:3px;
+      font-size:9px;
+      color:var(--muted);
+    }
+
+    .worker-toggle {
+      width:30px;
+      height:30px;
+      min-height:30px;
+      padding:0;
+      border:1px solid var(--line);
+      border-radius:8px;
+      background:#fff;
+      color:#66717a;
+      font-size:15px;
+      cursor:pointer;
+      transition:transform .15s ease;
+    }
+
+    .worker.collapsed .worker-toggle {
+      transform:rotate(-90deg);
+    }
+
+    .worker-body {
+      display:block;
+    }
+
+    .worker.collapsed .worker-body {
+      display:none;
+    }
+
+    .worker-head-actions {
+      display:flex;
+      align-items:center;
+      gap:7px;
+      flex:0 0 auto;
+    }
+
     .filters {
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
@@ -698,6 +766,12 @@
               </div>
             </div>
 
+            <div class="quick-tools">
+              <button type="button" class="quick-toggle" id="incidentsToggle">
+                SOLO INCIDENCIAS
+              </button>
+            </div>
+
             <div id="partsContainer" class="empty">
               Selecciona un día del calendario.
             </div>
@@ -736,6 +810,8 @@ let selectedDate = dateKey(new Date());
 let monthActivity = {};
 let currentParts = [];
 let requestContext = null;
+let incidentsOnly = false;
+const collapsedWorkers = new Set();
 
 window.addEventListener('load', () => {
   document.getElementById('backendForm').action = BACKEND_WEBAPP_URL;
@@ -763,7 +839,27 @@ window.addEventListener('load', () => {
   document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
   document.getElementById('projectFilter').addEventListener('change', renderParts);
   document.getElementById('subFilter').addEventListener('change', renderParts);
-  document.getElementById('stateFilter').addEventListener('change', renderParts);
+  document.getElementById('stateFilter').addEventListener('change', () => {
+    if (document.getElementById('stateFilter').value) {
+      incidentsOnly = false;
+      document.getElementById('incidentsToggle').classList.remove('active');
+    }
+    renderParts();
+  });
+
+  document.getElementById('incidentsToggle').addEventListener('click', () => {
+    incidentsOnly = !incidentsOnly;
+
+    const btn = document.getElementById('incidentsToggle');
+    btn.classList.toggle('active', incidentsOnly);
+
+    if (incidentsOnly) {
+      // El filtro rápido manda sobre el selector de estado.
+      document.getElementById('stateFilter').value = '';
+    }
+
+    renderParts();
+  });
 });
 
 function handleCredentialResponse(response) {
@@ -1002,6 +1098,8 @@ function updateSummary() {
   const workers = new Set(currentParts.map(p => p.email || p.worker)).size;
   const tasks = currentParts.length;
   const pending = currentParts.filter(p => p.status === 'PENDIENTE').length;
+  const review = currentParts.filter(p => p.status === 'REVISAR').length;
+  const rejected = currentParts.filter(p => p.status === 'RECHAZADO').length;
 
   document.getElementById('workersSummary').textContent =
     workers + (workers === 1 ? ' trabajador' : ' trabajadores');
@@ -1010,7 +1108,7 @@ function updateSummary() {
     tasks + (tasks === 1 ? ' tarea' : ' tareas');
 
   document.getElementById('pendingSummary').textContent =
-    pending + (pending === 1 ? ' pendiente' : ' pendientes');
+    pending + ' pendientes · ' + review + ' revisar · ' + rejected + ' rechazadas';
 }
 
 function renderParts() {
@@ -1021,7 +1119,8 @@ function renderParts() {
   const filtered = currentParts.filter(p =>
     (!projectFilter || p.project === projectFilter) &&
     (!subFilter || p.subcontractor === subFilter) &&
-    (!stateFilter || p.status === stateFilter)
+    (!stateFilter || p.status === stateFilter) &&
+    (!incidentsOnly || ['REVISAR','RECHAZADO'].includes(p.status))
   );
 
   const container = document.getElementById('partsContainer');
@@ -1045,8 +1144,23 @@ function renderParts() {
 
     const subHead = document.createElement('div');
     subHead.className = 'sub-head';
+    const subWorkers =
+      new Set(subParts.map(p => p.email || p.worker)).size;
+
+    const subPending =
+      subParts.filter(p => p.status === 'PENDIENTE').length;
+
+    const subIncidents =
+      subParts.filter(p => ['REVISAR','RECHAZADO'].includes(p.status)).length;
+
     subHead.innerHTML = `
-      <div class="sub-name">${escapeHtml(subName)}</div>
+      <div>
+        <div class="sub-name">${escapeHtml(subName)}</div>
+        <div class="sub-stats">
+          ${subWorkers} trabajador(es) · ${subParts.length} tarea(s) ·
+          ${subPending} pendiente(s) · ${subIncidents} incidencia(s)
+        </div>
+      </div>
       <div class="sub-count">${subParts.length} tarea(s)</div>
     `;
     subGroup.appendChild(subHead);
@@ -1086,6 +1200,13 @@ function renderWorkerBlock(parts) {
   const worker = document.createElement('div');
   worker.className = 'worker';
 
+  const workerKey =
+    [first.subcontractor, first.project, first.email, first.entry, first.exit].join('|');
+
+  if (collapsedWorkers.has(workerKey)) {
+    worker.classList.add('collapsed');
+  }
+
   const pendingRows = parts
     .filter(p => p.status === 'PENDIENTE')
     .map(p => p.rowNumber);
@@ -1098,27 +1219,100 @@ function renderWorkerBlock(parts) {
     <div class="worker-name">${escapeHtml(first.worker || first.email)}</div>
     <div class="worker-time">
       ${escapeHtml(first.entryTime || '--:--')} → ${escapeHtml(first.exitTime || '--:--')}
-      · ${escapeHtml(first.hours || '')} h
+      · ${escapeHtml(getHoursDisplay(first))} h
     </div>
   `;
   head.appendChild(info);
+
+  const headActions = document.createElement('div');
+  headActions.className = 'worker-head-actions';
 
   if (pendingRows.length) {
     const bulk = document.createElement('button');
     bulk.type = 'button';
     bulk.className = 'bulk-btn';
     bulk.textContent = 'VALIDAR PENDIENTES';
-    bulk.addEventListener('click', () => bulkValidate(pendingRows));
-    head.appendChild(bulk);
+    bulk.addEventListener('click', event => {
+      event.stopPropagation();
+      bulkValidate(pendingRows);
+    });
+    headActions.appendChild(bulk);
   }
 
-  worker.appendChild(head);
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'worker-toggle';
+  toggle.textContent = '⌄';
+  toggle.setAttribute('aria-label', 'Plegar o desplegar trabajador');
 
-  parts.forEach(part => {
-    worker.appendChild(renderTask(part));
+  toggle.addEventListener('click', event => {
+    event.stopPropagation();
+
+    if (worker.classList.toggle('collapsed')) {
+      collapsedWorkers.add(workerKey);
+    } else {
+      collapsedWorkers.delete(workerKey);
+    }
   });
 
+  headActions.appendChild(toggle);
+  head.appendChild(headActions);
+
+  const body = document.createElement('div');
+  body.className = 'worker-body';
+
+  parts.forEach(part => {
+    body.appendChild(renderTask(part));
+  });
+
+  worker.appendChild(head);
+  worker.appendChild(body);
+
   return worker;
+}
+
+function getHoursDisplay(part) {
+  const raw = String(part.hours || '').trim();
+
+  // Si ya viene como una duración limpia, la usamos.
+  if (/^\d+:\d{2}$/.test(raw)) return raw;
+
+  // Si Sheets devolvió una duración como fecha 1899,
+  // calculamos la duración directamente con ENTRADA y SALIDA.
+  const entry = parseFrontDateTime(part.entry);
+  const exit = parseFrontDateTime(part.exit);
+
+  if (entry && exit && exit >= entry) {
+    const totalMinutes = Math.max(
+      0,
+      Math.round((exit.getTime() - entry.getTime()) / 60000)
+    );
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    return hours + ':' + String(minutes).padStart(2, '0');
+  }
+
+  return raw && !raw.includes('1899') ? raw : '--:--';
+}
+
+function parseFrontDateTime(value) {
+  const text = String(value || '').trim();
+  const match = text.match(
+    /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/
+  );
+
+  if (!match) return null;
+
+  return new Date(
+    Number(match[3]),
+    Number(match[2]) - 1,
+    Number(match[1]),
+    Number(match[4]),
+    Number(match[5]),
+    Number(match[6])
+  );
 }
 
 function renderTask(part) {
@@ -1334,9 +1528,6 @@ function escapeHtml(value) {
     .replace(/'/g,'&#039;');
 }
 </script>
-
-</body>
-</html>
 
 </body>
 </html>
