@@ -214,6 +214,114 @@
     }
     .sync-box.pending .sync-action { display:block; }
 
+
+    .incident-link {
+      width: 100%;
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #52606a;
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .incident-link:active {
+      transform: translateY(1px);
+    }
+
+    .incident-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(25, 37, 45, .48);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 9999;
+      padding: 14px;
+    }
+
+    .incident-modal.open {
+      display: flex;
+    }
+
+    .incident-sheet {
+      width: min(100%, 520px);
+      max-height: 90vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.18);
+    }
+
+    .incident-sheet h2 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      color: #26323a;
+    }
+
+    .incident-intro {
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .incident-sheet label {
+      display: block;
+      margin: 12px 0 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #3a4750;
+    }
+
+    .incident-sheet select,
+    .incident-sheet input,
+    .incident-sheet textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 10px;
+      padding: 11px 12px;
+      font: inherit;
+      color: #25313a;
+    }
+
+    .incident-sheet textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .incident-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .incident-cancel,
+    .incident-send {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .incident-cancel {
+      background: #eef1f3;
+      color: #42505a;
+    }
+
+    .incident-send {
+      background: var(--levitec);
+      color: #fff;
+    }
+
     .status {
       margin-top: 16px;
       padding: 12px 13px;
@@ -500,6 +608,10 @@
         </button>
       </div>
 
+      <button type="button" class="incident-link" onclick="openIncidentModal()">
+        REPORTAR INCIDENCIA
+      </button>
+
       <div class="small">
         La identidad procede de Google y no puede editarse.
         La ubicación se solicita únicamente al realizar un fichaje.
@@ -511,6 +623,55 @@
 
     </div>
 
+
+
+    <div id="incidentModal" class="incident-modal" aria-hidden="true">
+      <div class="incident-sheet">
+        <h2>Reportar incidencia</h2>
+
+        <div class="incident-intro">
+          Úsalo si has olvidado un fichaje, has seleccionado un proyecto incorrecto
+          o necesitas dejar constancia de un problema.
+        </div>
+
+        <label for="incidentType">Tipo de incidencia</label>
+        <select id="incidentType">
+          <option value="">Selecciona un tipo</option>
+          <option value="OLVIDO_ENTRADA">Olvido de ENTRADA</option>
+          <option value="OLVIDO_SALIDA">Olvido de SALIDA</option>
+          <option value="PROYECTO_INCORRECTO">Proyecto incorrecto</option>
+          <option value="FICHAJE_NO_REGISTRADO">Fichaje no registrado</option>
+          <option value="OTRO">Otro</option>
+        </select>
+
+        <label for="incidentDate">Fecha afectada</label>
+        <input id="incidentDate" type="date">
+
+        <label for="incidentProject">Proyecto</label>
+        <select id="incidentProject">
+          <option value="">Sin especificar</option>
+        </select>
+
+        <label for="incidentTime">Hora aproximada (opcional)</label>
+        <input id="incidentTime" type="time">
+
+        <label for="incidentDescription">Descripción</label>
+        <textarea
+          id="incidentDescription"
+          maxlength="500"
+          placeholder="Explica brevemente qué ha ocurrido."></textarea>
+
+        <div class="incident-actions">
+          <button type="button" class="incident-cancel" onclick="closeIncidentModal()">
+            CANCELAR
+          </button>
+
+          <button type="button" class="incident-send" id="incidentSendButton" onclick="submitIncident()">
+            ENVIAR
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div id="taskModal" class="task-modal" aria-hidden="true">
       <div class="task-sheet">
@@ -564,6 +725,11 @@
       <input name="clientTimestamp" id="f_clientTimestamp">
       <input name="requestId" id="f_requestId">
       <input name="queuedOffline" id="f_queuedOffline">
+      <input name="incidentType" id="f_incidentType">
+      <input name="incidentDate" id="f_incidentDate">
+      <input name="incidentProject" id="f_incidentProject">
+      <input name="incidentTime" id="f_incidentTime">
+      <input name="incidentDescription" id="f_incidentDescription">
 
     </form>
 
@@ -598,6 +764,7 @@ let activePunchTimer = null;
 let syncInProgress = false;
 let currentUserEmail = '';
 let offlineModeInitialized = false;
+let incidentSubmitting = false;
 
 
 /* =========================================================
@@ -982,6 +1149,197 @@ async function performPunch(movement, tasks) {
       'err'
     );
   }
+}
+
+
+
+/* =========================================================
+   INCIDENCIAS
+========================================================= */
+
+function openIncidentModal() {
+
+  if (!googleCredential || !currentUserEmail) {
+    show(
+      'Identifícate con Google antes de reportar una incidencia.',
+      'warn'
+    );
+    return;
+  }
+
+  const modal =
+    document.getElementById('incidentModal');
+
+  const dateInput =
+    document.getElementById('incidentDate');
+
+  const projectSelect =
+    document.getElementById('incidentProject');
+
+  const currentProject =
+    document.getElementById('project').value;
+
+  const today =
+    new Date();
+
+  const y =
+    today.getFullYear();
+
+  const m =
+    String(today.getMonth() + 1).padStart(2, '0');
+
+  const d =
+    String(today.getDate()).padStart(2, '0');
+
+  dateInput.value =
+    y + '-' + m + '-' + d;
+
+  projectSelect.innerHTML =
+    '<option value="">Sin especificar</option>';
+
+  const mainProjects =
+    document.getElementById('project').options;
+
+  Array.from(mainProjects).forEach(option => {
+
+    if (!option.value) return;
+
+    const clone =
+      document.createElement('option');
+
+    clone.value =
+      option.value;
+
+    clone.textContent =
+      option.textContent;
+
+    projectSelect.appendChild(clone);
+  });
+
+  if (currentProject) {
+    projectSelect.value =
+      currentProject;
+  }
+
+  document.getElementById('incidentType').value = '';
+  document.getElementById('incidentTime').value = '';
+  document.getElementById('incidentDescription').value = '';
+
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+
+function closeIncidentModal() {
+
+  if (incidentSubmitting) return;
+
+  const modal =
+    document.getElementById('incidentModal');
+
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+
+function submitIncident() {
+
+  if (incidentSubmitting) return;
+
+  if (!navigator.onLine) {
+    show(
+      'Necesitas conexión para enviar una incidencia. ' +
+      'El fichaje offline seguirá guardado aunque cierres esta ventana.',
+      'warn'
+    );
+    return;
+  }
+
+  const type =
+    document.getElementById('incidentType').value;
+
+  const date =
+    document.getElementById('incidentDate').value;
+
+  const project =
+    document.getElementById('incidentProject').value;
+
+  const time =
+    document.getElementById('incidentTime').value;
+
+  const description =
+    document.getElementById('incidentDescription').value.trim();
+
+  if (!type) {
+    show(
+      'Selecciona el tipo de incidencia.',
+      'err'
+    );
+    return;
+  }
+
+  if (!date) {
+    show(
+      'Indica la fecha afectada.',
+      'err'
+    );
+    return;
+  }
+
+  if (!description) {
+    show(
+      'Describe brevemente qué ha ocurrido.',
+      'err'
+    );
+    return;
+  }
+
+  if (description.length > 500) {
+    show(
+      'La descripción es demasiado larga.',
+      'err'
+    );
+    return;
+  }
+
+  const subcontractorDetailInput =
+    document.getElementById('subcontractorDetail');
+
+  const subcontractorDetail =
+    subcontractorDetailInput
+      ? subcontractorDetailInput.value.trim()
+      : '';
+
+  if (
+    currentSubcontractor === 'NO LISTADO' &&
+    !subcontractorDetail
+  ) {
+    show(
+      'Indica primero el nombre de la subcontrata.',
+      'err'
+    );
+    return;
+  }
+
+  incidentSubmitting = true;
+
+  const sendButton =
+    document.getElementById('incidentSendButton');
+
+  sendButton.disabled = true;
+  sendButton.textContent = 'ENVIANDO…';
+
+  postToBackend({
+    action:'createIncident',
+    credential:googleCredential,
+    token:TOKEN,
+    subcontractorDetail:subcontractorDetail,
+    incidentType:type,
+    incidentDate:date,
+    incidentProject:project,
+    incidentTime:time,
+    incidentDescription:description
+  });
 }
 
 
@@ -1825,6 +2183,42 @@ window.addEventListener(
         syncPendingPunches(false);
       }
 
+    }
+
+
+    /* ---------- INCIDENCIA ---------- */
+
+    if (data.type === 'createIncident') {
+
+      incidentSubmitting = false;
+
+      const sendButton =
+        document.getElementById('incidentSendButton');
+
+      if (sendButton) {
+        sendButton.disabled = false;
+        sendButton.textContent = 'ENVIAR';
+      }
+
+      if (!data.ok) {
+        show(
+          data.message ||
+          'No se pudo registrar la incidencia.',
+          'err'
+        );
+        return;
+      }
+
+      closeIncidentModal();
+
+      show(
+        'Incidencia registrada correctamente.\n' +
+        'Referencia: ' +
+        data.incidentId,
+        'ok'
+      );
+
+      return;
     }
 
 
