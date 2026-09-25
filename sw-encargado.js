@@ -1,4 +1,4 @@
-const CACHE = 'levitec-encargados-fase2b-v1';
+const CACHE = 'levitec-encargados-fase2c-v1';
 
 const SHELL = [
   './encargado.html',
