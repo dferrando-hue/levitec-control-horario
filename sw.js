@@ -1,4 +1,4 @@
-const CACHE='levitec-fichaje-v2a';
+const CACHE='levitec-fichaje-v2a-login-mobile';
 const SHELL=['./','./index.html','./manifest.webmanifest','./levitec-fichaje-192.png','./levitec-fichaje-512.png'];
 
 self.addEventListener('install', event => {
