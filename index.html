@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LEVITEC · Control horario</title>
+  <meta name="theme-color" content="#007c7a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="LEVITEC Fichaje">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./levitec-fichaje-192.png">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
@@ -171,6 +176,42 @@
       color: #34414b;
       border: 1px solid #dfe4e7;
     }
+
+
+    .sync-box {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      background: #f8fafb;
+      border-radius: 11px;
+      padding: 11px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+    }
+    .sync-left { display:flex; align-items:center; gap:8px; min-width:0; }
+    .sync-dot {
+      width:9px; height:9px; border-radius:50%;
+      background:#2f9e63; flex:0 0 auto;
+      box-shadow:0 0 0 3px rgba(47,158,99,.10);
+    }
+    .sync-box.pending .sync-dot {
+      background:#d99114;
+      box-shadow:0 0 0 3px rgba(217,145,20,.12);
+    }
+    .sync-box.offline .sync-dot {
+      background:#c35b4f;
+      box-shadow:0 0 0 3px rgba(195,91,79,.12);
+    }
+    .sync-title { font-weight:700; color:#34414b; }
+    .sync-detail { margin-top:2px; color:var(--muted); font-size:11px; }
+    .sync-action {
+      border:0; padding:7px 9px; border-radius:8px;
+      background:var(--levitec-soft); color:var(--levitec);
+      font-size:10px; font-weight:700; white-space:nowrap; display:none;
+    }
+    .sync-box.pending .sync-action { display:block; }
 
     .status {
       margin-top: 16px;
@@ -403,6 +444,19 @@
 
     <div id="status" class="status info"></div>
 
+    <div id="syncBox" class="sync-box">
+      <div class="sync-left">
+        <span class="sync-dot"></span>
+        <div>
+          <div class="sync-title" id="syncTitle">Sincronización</div>
+          <div class="sync-detail" id="syncDetail">0 fichajes pendientes</div>
+        </div>
+      </div>
+      <button type="button" class="sync-action" id="syncAction" onclick="syncPendingPunches(true)">
+        SINCRONIZAR
+      </button>
+    </div>
+
     <div id="loginBox">
       <div class="login-copy">
         Identifícate con la Cuenta de Google asociada a tu ficha de trabajador.
@@ -505,6 +559,10 @@
       <input name="accuracy" id="f_accuracy">
       <input name="subcontractorDetail" id="f_subcontractorDetail">
       <input name="tasksJson" id="f_tasksJson">
+      <input name="clientEventId" id="f_clientEventId">
+      <input name="clientTimestamp" id="f_clientTimestamp">
+      <input name="requestId" id="f_requestId">
+      <input name="queuedOffline" id="f_queuedOffline">
 
     </form>
 
@@ -529,6 +587,15 @@ let currentSubcontractor = '';
 let availableTasks = [];
 const MAX_TASKS = 5;
 
+const OFFLINE_DB_NAME = 'LEVITEC_CONTROL_HORARIO';
+const OFFLINE_DB_VERSION = 1;
+const OFFLINE_STORE = 'pendingPunches';
+const PUNCH_TIMEOUT_MS = 12000;
+
+let activePunchRequest = null;
+let activePunchTimer = null;
+let syncInProgress = false;
+
 
 /* =========================================================
    INICIO
@@ -546,6 +613,12 @@ window.addEventListener('load', () => {
 
   document.getElementById('backendForm').action =
     BACKEND_WEBAPP_URL;
+
+  initOfflineMode();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
 
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
@@ -837,7 +910,9 @@ async function performPunch(movement, tasks) {
   setButtons(true);
 
   show(
-    'Buscando ubicación precisa…',
+    navigator.onLine
+      ? 'Buscando ubicación precisa…'
+      : 'Sin conexión. Buscando ubicación para guardar el fichaje…',
     'info'
   );
 
@@ -845,6 +920,41 @@ async function performPunch(movement, tasks) {
 
     const pos =
       await getAccuratePosition(100, 25000);
+
+    const clientEventId = makeClientEventId();
+
+    const payload = {
+      action:'punch',
+      token:TOKEN,
+      project:basic.project,
+      movement:movement,
+      subcontractorDetail:basic.subcontractorDetail,
+      tasksJson:movement === 'SALIDA'
+        ? JSON.stringify(tasks)
+        : '',
+      lat:pos.coords.latitude,
+      lon:pos.coords.longitude,
+      accuracy:pos.coords.accuracy,
+      clientEventId:clientEventId,
+      clientTimestamp:new Date().toISOString(),
+      queuedOffline:navigator.onLine ? 'NO' : 'SI'
+    };
+
+    await savePendingPunch(payload);
+    await refreshSyncStatus();
+
+    if (!navigator.onLine) {
+      busy = false;
+      setButtons(false);
+
+      show(
+        movement + ' guardada en este dispositivo.\n' +
+        'Pendiente de sincronización.\n' +
+        'Se enviará al recuperar conexión.',
+        'warn'
+      );
+      return;
+    }
 
     show(
       'Ubicación válida.\n' +
@@ -855,20 +965,7 @@ async function performPunch(movement, tasks) {
       'info'
     );
 
-    postToBackend({
-      action:'punch',
-      credential:googleCredential,
-      token:TOKEN,
-      project:basic.project,
-      movement:movement,
-      subcontractorDetail:basic.subcontractorDetail,
-      tasksJson:movement === 'SALIDA'
-        ? JSON.stringify(tasks)
-        : '',
-      lat:pos.coords.latitude,
-      lon:pos.coords.longitude,
-      accuracy:pos.coords.accuracy
-    });
+    await sendQueuedPunch(payload, false);
 
   } catch (err) {
 
@@ -1096,6 +1193,406 @@ function escapeHtml(value) {
 }
 
 
+
+/* =========================================================
+   MODO MALA CONEXIÓN / COLA OFFLINE
+========================================================= */
+
+function initOfflineMode() {
+
+  window.addEventListener('online', async () => {
+    await refreshSyncStatus();
+
+    if (googleCredential) {
+      syncPendingPunches(false);
+    }
+  });
+
+  window.addEventListener('offline', refreshSyncStatus);
+
+  refreshSyncStatus();
+}
+
+
+function openOfflineDb() {
+
+  return new Promise((resolve, reject) => {
+
+    const req =
+      indexedDB.open(
+        OFFLINE_DB_NAME,
+        OFFLINE_DB_VERSION
+      );
+
+    req.onupgradeneeded = () => {
+
+      const db = req.result;
+
+      if (!db.objectStoreNames.contains(OFFLINE_STORE)) {
+
+        const store =
+          db.createObjectStore(
+            OFFLINE_STORE,
+            {keyPath:'clientEventId'}
+          );
+
+        store.createIndex(
+          'clientTimestamp',
+          'clientTimestamp',
+          {unique:false}
+        );
+      }
+    };
+
+    req.onsuccess = () => resolve(req.result);
+
+    req.onerror = () => reject(
+      req.error ||
+      new Error('No se pudo abrir el almacenamiento offline.')
+    );
+  });
+}
+
+
+async function savePendingPunch(payload) {
+
+  const db = await openOfflineDb();
+
+  return new Promise((resolve, reject) => {
+
+    const tx =
+      db.transaction(
+        OFFLINE_STORE,
+        'readwrite'
+      );
+
+    tx.objectStore(OFFLINE_STORE).put(
+      Object.assign(
+        {},
+        payload,
+        {savedAt:new Date().toISOString()}
+      )
+    );
+
+    tx.oncomplete = () => resolve();
+
+    tx.onerror = () => reject(
+      tx.error ||
+      new Error('No se pudo guardar el fichaje pendiente.')
+    );
+  });
+}
+
+
+async function deletePendingPunch(clientEventId) {
+
+  const db = await openOfflineDb();
+
+  return new Promise((resolve, reject) => {
+
+    const tx =
+      db.transaction(
+        OFFLINE_STORE,
+        'readwrite'
+      );
+
+    tx.objectStore(OFFLINE_STORE).delete(clientEventId);
+
+    tx.oncomplete = () => resolve();
+
+    tx.onerror = () => reject(
+      tx.error ||
+      new Error('No se pudo actualizar la cola offline.')
+    );
+  });
+}
+
+
+async function getPendingPunches() {
+
+  const db = await openOfflineDb();
+
+  return new Promise((resolve, reject) => {
+
+    const tx =
+      db.transaction(
+        OFFLINE_STORE,
+        'readonly'
+      );
+
+    const req =
+      tx.objectStore(OFFLINE_STORE).getAll();
+
+    req.onsuccess = () => {
+
+      const rows =
+        Array.isArray(req.result)
+          ? req.result
+          : [];
+
+      rows.sort(
+        (a,b) =>
+          new Date(a.clientTimestamp) -
+          new Date(b.clientTimestamp)
+      );
+
+      resolve(rows);
+    };
+
+    req.onerror = () => reject(
+      req.error ||
+      new Error('No se pudo leer la cola offline.')
+    );
+  });
+}
+
+
+async function refreshSyncStatus() {
+
+  const box = document.getElementById('syncBox');
+  const title = document.getElementById('syncTitle');
+  const detail = document.getElementById('syncDetail');
+
+  if (!box || !title || !detail) return;
+
+  try {
+
+    const pending = await getPendingPunches();
+    const count = pending.length;
+
+    box.classList.remove('pending', 'offline');
+
+    if (!navigator.onLine) {
+
+      box.classList.add('offline');
+      title.textContent = 'Sin conexión';
+
+      detail.textContent =
+        count
+          ? count +
+            ' fichaje' +
+            (count === 1 ? '' : 's') +
+            ' pendiente' +
+            (count === 1 ? '' : 's')
+          : 'Sin conexión con el servidor';
+
+      return;
+    }
+
+    if (count) {
+
+      box.classList.add('pending');
+      title.textContent = 'Pendiente de sincronización';
+
+      detail.textContent =
+        count +
+        ' fichaje' +
+        (count === 1 ? '' : 's') +
+        ' pendiente' +
+        (count === 1 ? '' : 's');
+
+      return;
+    }
+
+    title.textContent = 'Sincronización';
+    detail.textContent = '0 fichajes pendientes';
+
+  } catch (err) {
+
+    box.classList.add('pending');
+    title.textContent = 'Sincronización';
+    detail.textContent = 'No se pudo comprobar el estado local';
+  }
+}
+
+
+function makeClientEventId() {
+
+  if (
+    window.crypto &&
+    typeof window.crypto.randomUUID === 'function'
+  ) {
+    return window.crypto.randomUUID();
+  }
+
+  return (
+    'evt_' +
+    Date.now().toString(36) +
+    '_' +
+    Math.random().toString(36).slice(2, 12)
+  );
+}
+
+
+function isAuthRetryableMessage(message) {
+
+  const m =
+    String(message || '').toLowerCase();
+
+  return (
+    m.includes('sesión de google') ||
+    m.includes('identidad de google') ||
+    m.includes('ha caducado')
+  );
+}
+
+
+async function sendQueuedPunch(payload, fromSync) {
+
+  if (!googleCredential) {
+    throw new Error(
+      'Vuelve a identificarte con Google para sincronizar.'
+    );
+  }
+
+  if (!navigator.onLine) {
+    await refreshSyncStatus();
+    return;
+  }
+
+  const requestId = makeClientEventId();
+
+  activePunchRequest = {
+    clientEventId:payload.clientEventId,
+    requestId:requestId,
+    fromSync:!!fromSync
+  };
+
+  if (activePunchTimer) {
+    clearTimeout(activePunchTimer);
+  }
+
+  activePunchTimer =
+    setTimeout(
+      async () => {
+
+        const current = activePunchRequest;
+
+        activePunchRequest = null;
+        activePunchTimer = null;
+
+        busy = false;
+        setButtons(false);
+
+        await refreshSyncStatus();
+
+        if (!current) return;
+
+        show(
+          'No se ha recibido confirmación del servidor.\n' +
+          'El fichaje queda guardado y se reintentará automáticamente.',
+          'warn'
+        );
+
+      },
+      PUNCH_TIMEOUT_MS
+    );
+
+  postToBackend(
+    Object.assign(
+      {},
+      payload,
+      {
+        credential:googleCredential,
+        requestId:requestId
+      }
+    )
+  );
+}
+
+
+async function syncPendingPunches(manual) {
+
+  if (syncInProgress) return;
+
+  if (!navigator.onLine) {
+
+    await refreshSyncStatus();
+
+    if (manual) {
+      show(
+        'No hay conexión para sincronizar.',
+        'warn'
+      );
+    }
+
+    return;
+  }
+
+  if (!googleCredential) {
+
+    if (manual) {
+      show(
+        'Identifícate con Google para sincronizar fichajes pendientes.',
+        'warn'
+      );
+    }
+
+    return;
+  }
+
+  const pending = await getPendingPunches();
+
+  if (!pending.length) {
+
+    await refreshSyncStatus();
+
+    if (manual) {
+      show(
+        'No hay fichajes pendientes.',
+        'ok'
+      );
+    }
+
+    return;
+  }
+
+  syncInProgress = true;
+
+  try {
+
+    show(
+      'Sincronizando fichajes pendientes…\n' +
+      'Quedan ' + pending.length + '.',
+      'info'
+    );
+
+    await sendQueuedPunch(
+      pending[0],
+      true
+    );
+
+  } finally {
+    syncInProgress = false;
+  }
+}
+
+
+async function continuePendingSync() {
+
+  if (!navigator.onLine || !googleCredential) {
+    return;
+  }
+
+  const pending = await getPendingPunches();
+
+  if (!pending.length) {
+    await refreshSyncStatus();
+    return;
+  }
+
+  setTimeout(
+    () => {
+      sendQueuedPunch(
+        pending[0],
+        true
+      );
+    },
+    350
+  );
+}
+
+
 /* =========================================================
    ENVÍO AL BACKEND
 ========================================================= */
@@ -1129,7 +1626,7 @@ function postToBackend(data) {
 
 window.addEventListener(
   'message',
-  event => {
+  async event => {
 
     if (
       event.origin !==
@@ -1265,6 +1762,12 @@ window.addEventListener(
         .style.display =
         'none';
 
+      refreshSyncStatus();
+
+      if (navigator.onLine) {
+        syncPendingPunches(false);
+      }
+
     }
 
 
@@ -1272,22 +1775,73 @@ window.addEventListener(
 
     if (data.type === 'punch') {
 
-      busy = false;
+      if (
+        activePunchRequest &&
+        data.requestId &&
+        data.requestId !== activePunchRequest.requestId
+      ) {
+        return;
+      }
 
+      const current = activePunchRequest;
+
+      if (activePunchTimer) {
+        clearTimeout(activePunchTimer);
+        activePunchTimer = null;
+      }
+
+      activePunchRequest = null;
+
+      busy = false;
       setButtons(false);
 
 
       if (!data.ok) {
 
+        const retryableAuth =
+          isAuthRetryableMessage(data.message);
+
+        if (
+          current &&
+          current.clientEventId &&
+          !retryableAuth
+        ) {
+          await deletePendingPunch(current.clientEventId);
+        }
+
+        await refreshSyncStatus();
+
         show(
-          data.message ||
-          'No se pudo registrar el fichaje.',
-          'err'
+          retryableAuth
+            ? (
+                (data.message || 'La sesión ha caducado.') +
+                '\nEl fichaje permanece pendiente. ' +
+                'Vuelve a identificarte para sincronizar.'
+              )
+            : (
+                data.message ||
+                'No se pudo registrar el fichaje.'
+              ),
+          retryableAuth ? 'warn' : 'err'
         );
 
-        return;
+        if (
+          current &&
+          current.fromSync &&
+          !retryableAuth
+        ) {
+          continuePendingSync();
+        }
 
+        return;
       }
+
+
+      if (current && current.clientEventId) {
+        await deletePendingPunch(current.clientEventId);
+      }
+
+      await refreshSyncStatus();
 
 
       show(
@@ -1306,13 +1860,26 @@ window.addEventListener(
         ' m · Precisión: ±' +
         data.accuracy +
         ' m' +
-        (data.tasksSaved
-          ? '\nTareas registradas: ' + data.tasksSaved
-          : ''),
+
+        (
+          data.tasksSaved
+            ? '\nTareas registradas: ' + data.tasksSaved
+            : ''
+        ) +
+
+        (
+          data.wasDuplicate
+            ? '\nSincronización confirmada sin duplicar el fichaje.'
+            : ''
+        ),
 
         'ok'
-
       );
+
+
+      if (current && current.fromSync) {
+        continuePendingSync();
+      }
 
     }
 
