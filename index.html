@@ -190,6 +190,7 @@
       gap: 10px;
       font-size: 12px;
     }
+    .sync-box.prelogin { display:none; }
     .sync-left { display:flex; align-items:center; gap:8px; min-width:0; }
     .sync-dot {
       width:9px; height:9px; border-radius:50%;
@@ -444,7 +445,7 @@
 
     <div id="status" class="status info"></div>
 
-    <div id="syncBox" class="sync-box">
+    <div id="syncBox" class="sync-box prelogin">
       <div class="sync-left">
         <span class="sync-dot"></span>
         <div>
@@ -595,6 +596,7 @@ const PUNCH_TIMEOUT_MS = 12000;
 let activePunchRequest = null;
 let activePunchTimer = null;
 let syncInProgress = false;
+let currentUserEmail = '';
 
 
 /* =========================================================
@@ -898,6 +900,11 @@ async function performPunch(movement, tasks) {
   const basic = validateBasicPunchData();
   if (!basic) return;
 
+  if (!currentUserEmail) {
+    show('Identifícate con Google antes de registrar un fichaje.', 'warn');
+    return;
+  }
+
   if (!navigator.geolocation) {
     show(
       'Este dispositivo no permite obtener ubicación.',
@@ -937,7 +944,8 @@ async function performPunch(movement, tasks) {
       accuracy:pos.coords.accuracy,
       clientEventId:clientEventId,
       clientTimestamp:new Date().toISOString(),
-      queuedOffline:navigator.onLine ? 'NO' : 'SI'
+      queuedOffline:navigator.onLine ? 'NO' : 'SI',
+      ownerEmail:currentUserEmail
     };
 
     await savePendingPunch(payload);
@@ -1330,13 +1338,28 @@ async function getPendingPunches() {
           ? req.result
           : [];
 
-      rows.sort(
+      const owner =
+        String(currentUserEmail || '')
+          .trim()
+          .toLowerCase();
+
+      const filtered =
+        owner
+          ? rows.filter(
+              row =>
+                String(row.ownerEmail || '')
+                  .trim()
+                  .toLowerCase() === owner
+            )
+          : [];
+
+      filtered.sort(
         (a,b) =>
           new Date(a.clientTimestamp) -
           new Date(b.clientTimestamp)
       );
 
-      resolve(rows);
+      resolve(filtered);
     };
 
     req.onerror = () => reject(
@@ -1354,6 +1377,13 @@ async function refreshSyncStatus() {
   const detail = document.getElementById('syncDetail');
 
   if (!box || !title || !detail) return;
+
+  if (!currentUserEmail) {
+    box.classList.add('prelogin');
+    return;
+  }
+
+  box.classList.remove('prelogin');
 
   try {
 
@@ -1438,6 +1468,15 @@ function isAuthRetryableMessage(message) {
 
 
 async function sendQueuedPunch(payload, fromSync) {
+
+  const payloadOwner =
+    String(payload.ownerEmail || '')
+      .trim()
+      .toLowerCase();
+
+  if (!currentUserEmail || payloadOwner !== currentUserEmail) {
+    throw new Error('Este fichaje pendiente pertenece a otra identidad y no puede sincronizarse con esta sesión.');
+  }
 
   if (!googleCredential) {
     throw new Error(
@@ -1679,6 +1718,10 @@ window.addEventListener(
         .textContent =
         data.email;
 
+      currentUserEmail =
+        String(data.email || '')
+          .trim()
+          .toLowerCase();
 
       document
         .getElementById('subcontractor')
@@ -1858,7 +1901,7 @@ window.addEventListener(
         'Distancia: ' +
         data.distance +
         ' m · Precisión: ±' +
-        data.accuracy +
+        Math.round(Number(data.accuracy || 0)) +
         ' m' +
 
         (
@@ -1869,7 +1912,7 @@ window.addEventListener(
 
         (
           data.wasDuplicate
-            ? '\nSincronización confirmada sin duplicar el fichaje.'
+            ? '\nFichaje sincronizado correctamente.'
             : ''
         ),
 
