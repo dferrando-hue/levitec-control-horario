@@ -371,6 +371,207 @@
       flex:0 0 auto;
     }
 
+
+    .incidents-section {
+      margin:16px 0 18px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      overflow:hidden;
+      background:#fff;
+    }
+
+    .incidents-head {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:12px 14px;
+      background:#fbfcfc;
+      border-bottom:1px solid var(--line);
+    }
+
+    .incidents-title {
+      font-size:12px;
+      font-weight:800;
+      color:var(--text);
+    }
+
+    .incidents-count {
+      min-width:26px;
+      padding:4px 7px;
+      border-radius:999px;
+      background:var(--red-bg);
+      color:var(--red);
+      font-size:9px;
+      font-weight:800;
+      text-align:center;
+    }
+
+    .incidents-empty {
+      padding:16px 14px;
+      color:var(--muted);
+      font-size:11px;
+      text-align:center;
+    }
+
+    .incident-admin-card {
+      padding:13px 14px;
+      border-bottom:1px solid var(--line);
+    }
+
+    .incident-admin-card:last-child {
+      border-bottom:0;
+    }
+
+    .incident-admin-top {
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+
+    .incident-admin-name {
+      font-size:12px;
+      font-weight:800;
+      color:var(--text);
+    }
+
+    .incident-admin-meta {
+      margin-top:3px;
+      font-size:9px;
+      line-height:1.45;
+      color:var(--muted);
+    }
+
+    .incident-admin-desc {
+      margin-top:9px;
+      padding:9px 10px;
+      border-radius:9px;
+      background:#f7f9fa;
+      color:#46535d;
+      font-size:11px;
+      line-height:1.45;
+    }
+
+    .incident-status {
+      flex:0 0 auto;
+      padding:5px 7px;
+      border-radius:999px;
+      font-size:8px;
+      font-weight:800;
+    }
+
+    .incident-status-PENDIENTE {
+      background:var(--yellow-bg);
+      color:var(--yellow);
+    }
+
+    .incident-status-REVISAR {
+      background:var(--orange-bg);
+      color:var(--orange);
+    }
+
+    .incident-status-RESUELTA {
+      background:var(--green-bg);
+      color:var(--green);
+    }
+
+    .incident-status-RECHAZADA {
+      background:var(--red-bg);
+      color:var(--red);
+    }
+
+    .incident-resolution-existing {
+      margin-top:8px;
+      padding:8px 10px;
+      border-left:3px solid var(--levitec);
+      background:var(--levitec-soft);
+      color:#46535d;
+      font-size:10px;
+      line-height:1.45;
+    }
+
+    .incident-admin-actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+      margin-top:10px;
+    }
+
+    .incident-admin-actions button {
+      min-height:32px;
+      border:0;
+      border-radius:8px;
+      padding:7px 10px;
+      font-size:9px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .incident-review-btn {
+      background:var(--orange-bg);
+      color:var(--orange);
+    }
+
+    .incident-resolve-btn {
+      background:var(--green-bg);
+      color:var(--green);
+    }
+
+    .incident-reject-btn {
+      background:var(--red-bg);
+      color:var(--red);
+    }
+
+    .incident-editor {
+      display:none;
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px dashed var(--line);
+    }
+
+    .incident-editor.open {
+      display:block;
+    }
+
+    .incident-editor-actions {
+      display:flex;
+      justify-content:flex-end;
+      gap:7px;
+      margin-top:7px;
+    }
+
+    .incident-editor-actions button {
+      border:0;
+      border-radius:8px;
+      padding:7px 10px;
+      font-size:9px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    .incident-cancel-admin {
+      background:#eef1f3;
+      color:#53606a;
+    }
+
+    .incident-save-admin {
+      background:var(--levitec);
+      color:#fff;
+    }
+
+    .incident-calendar-mark {
+      position:absolute;
+      left:7px;
+      top:7px;
+      width:6px;
+      height:6px;
+      border-radius:50%;
+      background:#c34d45;
+      box-shadow:0 0 0 2px #fff;
+    }
+
+
     .filters {
       display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
@@ -726,7 +927,7 @@
 
             <div class="legend">
               <i></i>
-              Los días con punto contienen partes registrados.
+              Punto verde: partes · Punto rojo: incidencias.
             </div>
           </div>
 
@@ -737,6 +938,17 @@
               <div class="summary-pill" id="workersSummary">0 trabajadores</div>
               <div class="summary-pill" id="tasksSummary">0 tareas</div>
               <div class="summary-pill" id="pendingSummary">0 pendientes</div>
+              <div class="summary-pill" id="incidentsSummary">0 incidencias</div>
+            </div>
+
+            <div class="incidents-section">
+              <div class="incidents-head">
+                <div class="incidents-title">INCIDENCIAS DEL DÍA</div>
+                <div class="incidents-count" id="incidentPendingCount">0</div>
+              </div>
+              <div id="incidentsContainer" class="incidents-empty">
+                No hay incidencias para este día.
+              </div>
             </div>
 
             <div class="filters">
@@ -793,6 +1005,9 @@
         <input name="status" id="f_status">
         <input name="observation" id="f_observation">
         <input name="rowNumbersJson" id="f_rowNumbersJson">
+        <input name="incidentRowNumber" id="f_incidentRowNumber">
+        <input name="incidentStatus" id="f_incidentStatus">
+        <input name="incidentResolution" id="f_incidentResolution">
       </form>
 
     </div>
@@ -809,6 +1024,7 @@ let currentMonth = firstOfMonth(new Date());
 let selectedDate = dateKey(new Date());
 let monthActivity = {};
 let currentParts = [];
+let currentIncidents = [];
 let requestContext = null;
 let incidentsOnly = false;
 const collapsedWorkers = new Set();
@@ -879,7 +1095,8 @@ function handleCredentialResponse(response) {
 function postToBackend(data, context = null) {
   requestContext = context;
 
-  ['action','credential','month','date','rowNumber','status','observation','rowNumbersJson']
+  ['action','credential','month','date','rowNumber','status','observation','rowNumbersJson',
+   'incidentRowNumber','incidentStatus','incidentResolution']
     .forEach(k => {
       const el = document.getElementById('f_' + k);
       if (el) el.value = '';
@@ -909,7 +1126,8 @@ window.addEventListener('message', event => {
     // para devolver la interfaz al estado real guardado en Sheets.
     if (
       data.type === 'adminUpdate' ||
-      data.type === 'adminBulkValidate'
+      data.type === 'adminBulkValidate' ||
+      data.type === 'adminIncidentUpdate'
     ) {
       setTimeout(() => loadDay(selectedDate), 700);
     }
@@ -940,8 +1158,10 @@ window.addEventListener('message', event => {
 
   if (data.type === 'adminDay') {
     currentParts = Array.isArray(data.parts) ? data.parts : [];
+    currentIncidents = Array.isArray(data.incidents) ? data.incidents : [];
     populateFilters();
     updateSummary();
+    renderIncidents();
     renderParts();
     hideStatus();
     return;
@@ -977,6 +1197,28 @@ window.addEventListener('message', event => {
     currentParts.forEach(p => p._saving = false);
     updateSummary();
     loadMonth();
+    return;
+  }
+
+  if (data.type === 'adminIncidentUpdate') {
+    const incident = currentIncidents.find(
+      i => Number(i.rowNumber) === Number(data.rowNumber)
+    );
+
+    if (incident) {
+      incident.status = data.status;
+      incident.resolvedBy = data.resolvedBy || '';
+      incident.resolution = data.resolution || '';
+      incident.resolutionDate = data.resolutionDate || '';
+      incident._saving = false;
+    }
+
+    renderIncidents();
+    updateSummary();
+    loadMonth();
+
+    showStatus('Incidencia actualizada correctamente.', 'ok');
+    return;
   }
 });
 
@@ -1062,6 +1304,12 @@ function renderCalendar() {
       }
     }
 
+    if (activity && activity.incidents > 0) {
+      const incidentMark = document.createElement('span');
+      incidentMark.className = 'incident-calendar-mark';
+      btn.appendChild(incidentMark);
+    }
+
     btn.addEventListener('click', () => {
       if (d.getMonth() !== currentMonth.getMonth() || d.getFullYear() !== currentMonth.getFullYear()) {
         currentMonth = new Date(d.getFullYear(), d.getMonth(), 1);
@@ -1101,6 +1349,16 @@ function updateSummary() {
   const review = currentParts.filter(p => p.status === 'REVISAR').length;
   const rejected = currentParts.filter(p => p.status === 'RECHAZADO').length;
 
+  const incidentPending =
+    currentIncidents.filter(i => i.status === 'PENDIENTE').length;
+
+  document.getElementById('incidentsSummary').textContent =
+    currentIncidents.length +
+    (currentIncidents.length === 1 ? ' incidencia' : ' incidencias');
+
+  document.getElementById('incidentPendingCount').textContent =
+    incidentPending > 99 ? '99+' : String(incidentPending);
+
   document.getElementById('workersSummary').textContent =
     workers + (workers === 1 ? ' trabajador' : ' trabajadores');
 
@@ -1110,6 +1368,240 @@ function updateSummary() {
   document.getElementById('pendingSummary').textContent =
     pending + ' pendientes · ' + review + ' revisar · ' + rejected + ' rechazadas';
 }
+
+
+function renderIncidents() {
+  const container =
+    document.getElementById('incidentsContainer');
+
+  if (!currentIncidents.length) {
+    container.className = 'incidents-empty';
+    container.innerHTML = 'No hay incidencias para este día.';
+    return;
+  }
+
+  container.className = '';
+  container.innerHTML = '';
+
+  const order = {
+    PENDIENTE:0,
+    REVISAR:1,
+    RECHAZADA:2,
+    RESUELTA:3
+  };
+
+  [...currentIncidents]
+    .sort((a,b) =>
+      (order[a.status] ?? 9) - (order[b.status] ?? 9)
+    )
+    .forEach(incident => {
+      container.appendChild(
+        renderIncidentCard(incident)
+      );
+    });
+}
+
+
+function renderIncidentCard(incident) {
+  const el =
+    document.createElement('div');
+
+  el.className =
+    'incident-admin-card';
+
+  const typeLabel =
+    incidentTypeLabel(incident.type);
+
+  const meta = [
+    incident.worker || incident.email,
+    incident.subcontractor,
+    incident.project || 'Sin proyecto',
+    incident.approxTime
+      ? 'Hora aprox. ' + incident.approxTime
+      : ''
+  ].filter(Boolean).join(' · ');
+
+  const existingResolution =
+    incident.resolution
+      ? `
+        <div class="incident-resolution-existing">
+          <strong>Resolución:</strong>
+          ${escapeHtml(incident.resolution)}
+          ${
+            incident.resolvedBy
+              ? `<br><span>${escapeHtml(incident.resolvedBy)}</span>`
+              : ''
+          }
+        </div>
+      `
+      : '';
+
+  el.innerHTML = `
+    <div class="incident-admin-top">
+      <div>
+        <div class="incident-admin-name">
+          ${escapeHtml(typeLabel)}
+        </div>
+        <div class="incident-admin-meta">
+          ${escapeHtml(meta)}
+        </div>
+      </div>
+
+      <span class="incident-status incident-status-${incident.status}">
+        ${escapeHtml(incident.status)}
+      </span>
+    </div>
+
+    <div class="incident-admin-desc">
+      ${escapeHtml(incident.description || 'Sin descripción')}
+    </div>
+
+    ${existingResolution}
+
+    <div class="incident-admin-actions">
+      <button type="button" class="incident-review-btn" data-status="REVISAR">
+        REVISAR
+      </button>
+      <button type="button" class="incident-resolve-btn" data-status="RESUELTA">
+        RESOLVER
+      </button>
+      <button type="button" class="incident-reject-btn" data-status="RECHAZADA">
+        RECHAZAR
+      </button>
+    </div>
+
+    <div class="incident-editor">
+      <label>Observación / resolución</label>
+      <textarea maxlength="700"
+        placeholder="Indica qué se ha revisado o cómo se resuelve la incidencia."></textarea>
+
+      <div class="incident-editor-actions">
+        <button type="button" class="incident-cancel-admin">
+          CANCELAR
+        </button>
+        <button type="button" class="incident-save-admin">
+          GUARDAR
+        </button>
+      </div>
+    </div>
+  `;
+
+  el
+    .querySelectorAll('[data-status]')
+    .forEach(btn => {
+      btn.addEventListener('click', () => {
+        openIncidentEditor(
+          el,
+          incident,
+          btn.dataset.status
+        );
+      });
+    });
+
+  el
+    .querySelector('.incident-cancel-admin')
+    .addEventListener('click', () => {
+      el
+        .querySelector('.incident-editor')
+        .classList.remove('open');
+    });
+
+  return el;
+}
+
+
+function openIncidentEditor(
+  el,
+  incident,
+  status
+) {
+  const editor =
+    el.querySelector('.incident-editor');
+
+  const textarea =
+    editor.querySelector('textarea');
+
+  const save =
+    editor.querySelector('.incident-save-admin');
+
+  textarea.value =
+    incident.resolution || '';
+
+  editor.classList.add('open');
+  textarea.focus();
+
+  save.onclick = () => {
+    const resolution =
+      textarea.value.trim();
+
+    if (!resolution) {
+      showStatus(
+        'Debes indicar una observación o resolución.',
+        'err'
+      );
+      return;
+    }
+
+    updateIncident(
+      incident.rowNumber,
+      status,
+      resolution
+    );
+  };
+}
+
+
+function updateIncident(
+  rowNumber,
+  status,
+  resolution
+) {
+  const incident =
+    currentIncidents.find(
+      i => Number(i.rowNumber) === Number(rowNumber)
+    );
+
+  if (!incident || incident._saving) return;
+
+  incident.status = status;
+  incident.resolution = resolution;
+  incident.resolvedBy =
+    manager && manager.email
+      ? manager.email
+      : '';
+  incident._saving = true;
+
+  renderIncidents();
+  updateSummary();
+
+  showStatus(
+    'Guardando incidencia…',
+    'info'
+  );
+
+  postToBackend({
+    action:'adminIncidentUpdate',
+    credential:googleCredential,
+    incidentRowNumber:rowNumber,
+    incidentStatus:status,
+    incidentResolution:resolution
+  });
+}
+
+
+function incidentTypeLabel(type) {
+  const labels = {
+    OLVIDO_ENTRADA:'Olvido de ENTRADA',
+    OLVIDO_SALIDA:'Olvido de SALIDA',
+    PROYECTO_INCORRECTO:'Proyecto incorrecto',
+    FICHAJE_NO_REGISTRADO:'Fichaje no registrado',
+    OTRO:'Otro'
+  };
+
+  return labels[type] || type || 'Incidencia';
+}
+
+
 
 function renderParts() {
   const projectFilter = document.getElementById('projectFilter').value;
