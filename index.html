@@ -296,6 +296,36 @@
       resize: vertical;
     }
 
+    .incident-feedback {
+      display: none;
+      margin-top: 12px;
+      border-radius: 10px;
+      padding: 10px 11px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .incident-feedback.info {
+      display: block;
+      background: #edf7f5;
+      color: #0d5d59;
+      border: 1px solid #cae9e3;
+    }
+
+    .incident-feedback.err {
+      display: block;
+      background: #fff0ee;
+      color: #9a3d35;
+      border: 1px solid #f1c8c4;
+    }
+
+    .incident-feedback.ok {
+      display: block;
+      background: #edf8f0;
+      color: #286b3f;
+      border: 1px solid #cfe7d6;
+    }
+
     .incident-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -661,6 +691,8 @@
           maxlength="500"
           placeholder="Explica brevemente qué ha ocurrido."></textarea>
 
+        <div id="incidentFeedback" class="incident-feedback"></div>
+
         <div class="incident-actions">
           <button type="button" class="incident-cancel" onclick="closeIncidentModal()">
             CANCELAR
@@ -765,6 +797,9 @@ let syncInProgress = false;
 let currentUserEmail = '';
 let offlineModeInitialized = false;
 let incidentSubmitting = false;
+let loginValidationTimer = null;
+let loginValidating = false;
+let incidentTimer = null;
 
 
 /* FASE 2A · LOGIN GOOGLE ORIGINAL RESTAURADO */
@@ -786,11 +821,17 @@ window.addEventListener('load', () => {
   document.getElementById('backendForm').action =
     BACKEND_WEBAPP_URL;
 
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(ua);
+
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
     callback: handleCredentialResponse,
-    auto_select: true,
-    cancel_on_tap_outside: false
+    auto_select: isIOS,
+    cancel_on_tap_outside: false,
+    use_fedcm_for_button: isAndroid
   });
 
   google.accounts.id.renderButton(
@@ -803,7 +844,9 @@ window.addEventListener('load', () => {
     }
   );
 
-  google.accounts.id.prompt();
+  if (isIOS) {
+    google.accounts.id.prompt();
+  }
 
 
 });
@@ -815,6 +858,8 @@ window.addEventListener('load', () => {
 
 function handleCredentialResponse(response) {
 
+  if (loginValidating) return;
+
   if (!response || !response.credential) {
     show(
       'No se pudo obtener la identidad de Google.',
@@ -824,11 +869,22 @@ function handleCredentialResponse(response) {
   }
 
   googleCredential = response.credential;
+  loginValidating = true;
 
   show(
     'Validando trabajador y subcontrata…',
     'info'
   );
+
+  if (loginValidationTimer) clearTimeout(loginValidationTimer);
+
+  loginValidationTimer = setTimeout(() => {
+    loginValidating = false;
+    show(
+      'La validación está tardando más de lo normal. Pulsa de nuevo Continuar con Google.',
+      'warn'
+    );
+  }, 15000);
 
   postToBackend({
     action:'bootstrap',
@@ -1160,6 +1216,36 @@ async function performPunch(movement, tasks) {
    INCIDENCIAS
 ========================================================= */
 
+function setIncidentFeedback(message, type) {
+  const box = document.getElementById('incidentFeedback');
+  if (!box) return;
+
+  box.className =
+    'incident-feedback' +
+    (type ? ' ' + type : '');
+
+  box.textContent = message || '';
+}
+
+
+function resetIncidentSubmitState() {
+  incidentSubmitting = false;
+
+  if (incidentTimer) {
+    clearTimeout(incidentTimer);
+    incidentTimer = null;
+  }
+
+  const sendButton =
+    document.getElementById('incidentSendButton');
+
+  if (sendButton) {
+    sendButton.disabled = false;
+    sendButton.textContent = 'ENVIAR';
+  }
+}
+
+
 function openIncidentModal() {
 
   if (!googleCredential || !currentUserEmail) {
@@ -1227,6 +1313,7 @@ function openIncidentModal() {
   document.getElementById('incidentType').value = '';
   document.getElementById('incidentTime').value = '';
   document.getElementById('incidentDescription').value = '';
+  setIncidentFeedback('', '');
 
   modal.classList.add('open');
   modal.setAttribute('aria-hidden', 'false');
@@ -1250,11 +1337,7 @@ function submitIncident() {
   if (incidentSubmitting) return;
 
   if (!navigator.onLine) {
-    show(
-      'Necesitas conexión para enviar una incidencia. ' +
-      'El fichaje offline seguirá guardado aunque cierres esta ventana.',
-      'warn'
-    );
+    setIncidentFeedback('Necesitas conexión para enviar la incidencia.', 'err');
     return;
   }
 
@@ -1274,34 +1357,22 @@ function submitIncident() {
     document.getElementById('incidentDescription').value.trim();
 
   if (!type) {
-    show(
-      'Selecciona el tipo de incidencia.',
-      'err'
-    );
+    setIncidentFeedback('Selecciona el tipo de incidencia.', 'err');
     return;
   }
 
   if (!date) {
-    show(
-      'Indica la fecha afectada.',
-      'err'
-    );
+    setIncidentFeedback('Indica la fecha afectada.', 'err');
     return;
   }
 
   if (!description) {
-    show(
-      'Describe brevemente qué ha ocurrido.',
-      'err'
-    );
+    setIncidentFeedback('Describe brevemente qué ha ocurrido.', 'err');
     return;
   }
 
   if (description.length > 500) {
-    show(
-      'La descripción es demasiado larga.',
-      'err'
-    );
+    setIncidentFeedback('La descripción es demasiado larga.', 'err');
     return;
   }
 
@@ -1317,10 +1388,7 @@ function submitIncident() {
     currentSubcontractor === 'NO LISTADO' &&
     !subcontractorDetail
   ) {
-    show(
-      'Indica primero el nombre de la subcontrata.',
-      'err'
-    );
+    setIncidentFeedback('Indica primero el nombre de la subcontrata.', 'err');
     return;
   }
 
@@ -1331,6 +1399,23 @@ function submitIncident() {
 
   sendButton.disabled = true;
   sendButton.textContent = 'ENVIANDO…';
+
+  setIncidentFeedback(
+    'Enviando incidencia…',
+    'info'
+  );
+
+  if (incidentTimer) {
+    clearTimeout(incidentTimer);
+  }
+
+  incidentTimer = setTimeout(() => {
+    resetIncidentSubmitState();
+    setIncidentFeedback(
+      'No se ha recibido respuesta del servidor. Comprueba la conexión y vuelve a intentarlo.',
+      'err'
+    );
+  }, 15000);
 
   postToBackend({
     action:'createIncident',
@@ -2067,6 +2152,13 @@ window.addEventListener(
 
     if (data.type === 'bootstrap') {
 
+      loginValidating = false;
+
+      if (loginValidationTimer) {
+        clearTimeout(loginValidationTimer);
+        loginValidationTimer = null;
+      }
+
       if (!data.ok) {
 
         show(
@@ -2193,18 +2285,10 @@ window.addEventListener(
 
     if (data.type === 'createIncident') {
 
-      incidentSubmitting = false;
-
-      const sendButton =
-        document.getElementById('incidentSendButton');
-
-      if (sendButton) {
-        sendButton.disabled = false;
-        sendButton.textContent = 'ENVIAR';
-      }
+      resetIncidentSubmitState();
 
       if (!data.ok) {
-        show(
+        setIncidentFeedback(
           data.message ||
           'No se pudo registrar la incidencia.',
           'err'
@@ -2212,14 +2296,22 @@ window.addEventListener(
         return;
       }
 
-      closeIncidentModal();
-
-      show(
-        'Incidencia registrada correctamente.\n' +
-        'Referencia: ' +
+      setIncidentFeedback(
+        'Incidencia registrada correctamente. Referencia: ' +
         data.incidentId,
         'ok'
       );
+
+      setTimeout(() => {
+        closeIncidentModal();
+
+        show(
+          'Incidencia registrada correctamente.\n' +
+          'Referencia: ' +
+          data.incidentId,
+          'ok'
+        );
+      }, 900);
 
       return;
     }
