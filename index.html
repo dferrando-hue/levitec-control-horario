@@ -597,6 +597,7 @@ let activePunchRequest = null;
 let activePunchTimer = null;
 let syncInProgress = false;
 let currentUserEmail = '';
+let offlineModeInitialized = false;
 
 
 /* =========================================================
@@ -615,12 +616,6 @@ window.addEventListener('load', () => {
 
   document.getElementById('backendForm').action =
     BACKEND_WEBAPP_URL;
-
-  initOfflineMode();
-
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  }
 
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
@@ -1206,6 +1201,23 @@ function escapeHtml(value) {
    MODO MALA CONEXIÓN / COLA OFFLINE
 ========================================================= */
 
+function startOfflineModeAfterLogin() {
+
+  if (offlineModeInitialized) return;
+  offlineModeInitialized = true;
+
+  initOfflineMode();
+
+  if ('serviceWorker' in navigator) {
+    setTimeout(() => {
+      navigator.serviceWorker
+        .register('./sw.js')
+        .catch(() => {});
+    }, 700);
+  }
+}
+
+
 function initOfflineMode() {
 
   window.addEventListener('online', async () => {
@@ -1722,6 +1734,8 @@ window.addEventListener(
         String(data.email || '')
           .trim()
           .toLowerCase();
+
+      startOfflineModeAfterLogin();
 
       document
         .getElementById('subcontractor')
