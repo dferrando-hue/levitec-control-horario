@@ -1,1404 +1,2472 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LEVITEC · Control horario</title>
   <meta name="theme-color" content="#007c7a">
-  <title>LEVITEC SITE CONTROL</title>
-  <link rel="preconnect" href="https://accounts.google.com">
-  <link rel="stylesheet" href="styles.css?v=0.14.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="LEVITEC Fichaje">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./levitec-fichaje-192.png">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <style>
+    :root {
+      font-family: Arial, sans-serif;
+      --levitec: #007c7a;
+      --levitec-soft: #e9f6f3;
+      --text: #1f2933;
+      --muted: #66727c;
+      --line: #e7ebee;
+      --bg: #f4f6f7;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 50% -120px, rgba(0,124,122,.10), transparent 360px),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 470px;
+      margin: 0 auto;
+      padding: 42px 16px 40px;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid rgba(31,41,51,.06);
+      border-radius: 20px;
+      padding: 30px 28px 20px;
+      box-shadow:
+        0 18px 45px rgba(31,41,51,.08),
+        0 2px 8px rgba(31,41,51,.04);
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .levitec-logo {
+      width: 176px;
+      max-width: 68%;
+      height: auto;
+      display: block;
+      margin: 0 auto 16px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1.15;
+      font-weight: 700;
+      letter-spacing: -.35px;
+      color: var(--text);
+    }
+
+    .brand-subtitle {
+      margin-top: 7px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: .2px;
+    }
+
+    .brand-divider {
+      width: 42px;
+      height: 3px;
+      border-radius: 3px;
+      background: var(--levitec);
+      margin: 15px auto 0;
+      opacity: .85;
+    }
+
+    .identity {
+      background: #f8fafb;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 14px 15px;
+      margin: 18px 0;
+    }
+
+    .name {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .meta {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    label {
+      display: block;
+      margin-top: 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #34414b;
+    }
+
+    select,
+    input[type="text"] {
+      width: 100%;
+      margin-top: 7px;
+      padding: 13px 12px;
+      border: 1px solid #dce2e6;
+      border-radius: 10px;
+      font-size: 15px;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+
+    select:focus,
+    input[type="text"]:focus {
+      border-color: rgba(0,124,122,.65);
+      box-shadow: 0 0 0 3px rgba(0,124,122,.09);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 21px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 11px;
+      padding: 15px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: .15px;
+      transition: transform .08s ease, box-shadow .15s ease, opacity .15s ease;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .entry {
+      background: var(--levitec);
+      color: #fff;
+      box-shadow: 0 6px 14px rgba(0,124,122,.18);
+    }
+
+    .exit {
+      background: #f4f5f6;
+      color: #34414b;
+      border: 1px solid #dfe4e7;
+    }
+
+
+    .sync-box {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      background: #f8fafb;
+      border-radius: 11px;
+      padding: 11px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+    }
+    .sync-box.prelogin { display:none; }
+    .sync-left { display:flex; align-items:center; gap:8px; min-width:0; }
+    .sync-dot {
+      width:9px; height:9px; border-radius:50%;
+      background:#2f9e63; flex:0 0 auto;
+      box-shadow:0 0 0 3px rgba(47,158,99,.10);
+    }
+    .sync-box.pending .sync-dot {
+      background:#d99114;
+      box-shadow:0 0 0 3px rgba(217,145,20,.12);
+    }
+    .sync-box.offline .sync-dot {
+      background:#c35b4f;
+      box-shadow:0 0 0 3px rgba(195,91,79,.12);
+    }
+    .sync-title { font-weight:700; color:#34414b; }
+    .sync-detail { margin-top:2px; color:var(--muted); font-size:11px; }
+    .sync-action {
+      border:0; padding:7px 9px; border-radius:8px;
+      background:var(--levitec-soft); color:var(--levitec);
+      font-size:10px; font-weight:700; white-space:nowrap; display:none;
+    }
+    .sync-box.pending .sync-action { display:block; }
+
+
+    .incident-link {
+      width: 100%;
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #52606a;
+      border-radius: 10px;
+      padding: 11px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .incident-link:active {
+      transform: translateY(1px);
+    }
+
+    .incident-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(25, 37, 45, .48);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 9999;
+      padding: 14px;
+    }
+
+    .incident-modal.open {
+      display: flex;
+    }
+
+    .incident-sheet {
+      width: min(100%, 520px);
+      max-height: 90vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.18);
+    }
+
+    .incident-sheet h2 {
+      margin: 0 0 6px;
+      font-size: 20px;
+      color: #26323a;
+    }
+
+    .incident-intro {
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .incident-sheet label {
+      display: block;
+      margin: 12px 0 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #3a4750;
+    }
+
+    .incident-sheet select,
+    .incident-sheet input,
+    .incident-sheet textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 10px;
+      padding: 11px 12px;
+      font: inherit;
+      color: #25313a;
+    }
+
+    .incident-sheet textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .incident-feedback {
+      display: none;
+      margin-top: 12px;
+      border-radius: 10px;
+      padding: 10px 11px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .incident-feedback.info {
+      display: block;
+      background: #edf7f5;
+      color: #0d5d59;
+      border: 1px solid #cae9e3;
+    }
+
+    .incident-feedback.err {
+      display: block;
+      background: #fff0ee;
+      color: #9a3d35;
+      border: 1px solid #f1c8c4;
+    }
+
+    .incident-feedback.ok {
+      display: block;
+      background: #edf8f0;
+      color: #286b3f;
+      border: 1px solid #cfe7d6;
+    }
+
+    .incident-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .incident-cancel,
+    .incident-send {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .incident-cancel {
+      background: #eef1f3;
+      color: #42505a;
+    }
+
+    .incident-send {
+      background: var(--levitec);
+      color: #fff;
+    }
+
+    .status {
+      margin-top: 16px;
+      padding: 12px 13px;
+      border-radius: 10px;
+      white-space: pre-line;
+      display: none;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .ok {
+      background: #eaf7ef;
+      color: #27613a;
+      border: 1px solid #d2ecd9;
+    }
+
+    .err {
+      background: #fff0ef;
+      color: #8b342e;
+      border: 1px solid #f1d4d1;
+    }
+
+    .info {
+      background: #edf5fb;
+      color: #315a77;
+      border: 1px solid #d9e9f4;
+    }
+
+    .small {
+      margin-top: 15px;
+      font-size: 11.5px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    #app {
+      display: none;
+    }
+
+    #loginBox {
+      margin-top: 4px;
+      padding-top: 4px;
+    }
+
+    .login-copy {
+      text-align: center;
+      max-width: 330px;
+      margin: 0 auto 15px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    #googleButton {
+      display: flex;
+      justify-content: center;
+      min-height: 40px;
+    }
+
+    .app-footer {
+      margin-top: 24px;
+      padding-top: 11px;
+      border-top: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .dev-signature {
+      font-size: 10px;
+      color: #889199;
+      opacity: .9;
+      letter-spacing: .15px;
+    }
+
+
+    .task-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      background: rgba(24, 32, 38, .42);
+      padding: 14px;
+    }
+
+    .task-modal.open {
+      display: flex;
+    }
+
+    .task-sheet {
+      width: 100%;
+      max-width: 470px;
+      max-height: 88vh;
+      overflow-y: auto;
+      background: #fff;
+      border-radius: 20px;
+      padding: 22px 18px 18px;
+      box-shadow: 0 22px 60px rgba(20,30,36,.24);
+    }
+
+    .task-sheet h2 {
+      margin: 0;
+      font-size: 20px;
+      color: var(--text);
+    }
+
+    .task-sheet-intro {
+      margin: 6px 0 16px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .task-row {
+      position: relative;
+      margin-top: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: #fafbfb;
+    }
+
+    .task-row-title {
+      margin-bottom: 3px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #34414b;
+    }
+
+    .task-row label {
+      margin-top: 11px;
+    }
+
+    .task-description-block {
+      display: none;
+    }
+
+    .task-description-block.visible {
+      display: block;
+    }
+
+    .task-remove {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border-radius: 50%;
+      background: #f1f3f4;
+      color: #67717a;
+      border: 1px solid #e2e6e8;
+      font-size: 16px;
+      line-height: 28px;
+    }
+
+    .task-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .add-task {
+      width: 100%;
+      margin-top: 14px;
+      background: var(--levitec-soft);
+      color: var(--levitec);
+      border: 1px solid rgba(0,124,122,.16);
+    }
+
+    .task-cancel {
+      background: #f4f5f6;
+      color: #46515a;
+      border: 1px solid #dde2e5;
+    }
+
+    .task-confirm {
+      background: var(--levitec);
+      color: #fff;
+      box-shadow: 0 6px 14px rgba(0,124,122,.18);
+    }
+
+    .task-counter {
+      margin-top: 9px;
+      text-align: right;
+      font-size: 10px;
+      color: #8a939a;
+    }
+
+    @media (min-width: 520px) {
+      .task-modal {
+        align-items: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .wrap {
+        padding: 20px 12px 28px;
+      }
+
+      .card {
+        border-radius: 16px;
+        padding: 25px 18px 18px;
+      }
+
+      .levitec-logo {
+        width: 158px;
+      }
+
+      .brand h1 {
+        font-size: 23px;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<header class="topbar">
-  <div class="brand">
-    <div class="brand-mark">L</div>
-    <div>
-      <div class="brand-title">LEVITEC SITE CONTROL</div>
-      <div class="brand-subtitle">Digital Site Management</div>
+<div class="wrap">
+  <div class="card">
+
+    <div class="brand">
+      <img src="data:image/png;base64,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" alt="LEVITEC" class="levitec-logo">
+      <h1>Control horario</h1>
+      <div class="brand-subtitle">Registro de presencia · Áreas mecánicas</div>
+      <div class="brand-divider"></div>
     </div>
-  </div>
 
-  <div id="topUser" class="top-user hidden">
-    <div class="top-user-text">
-      <strong id="topUserName"></strong>
-      <span id="topUserMeta"></span>
-    </div>
-    <button id="logoutBtn" class="btn btn-secondary btn-sm" type="button">Cerrar sesión</button>
-  </div>
-</header>
+    <div id="status" class="status info"></div>
 
-<main class="main">
-
-  <section id="loginView" class="view login-view">
-    <div class="login-card">
-      <div class="eyebrow">SITE CONTROL</div>
-      <h1>Gestión operativa de obra</h1>
-      <p>Accede con tu cuenta autorizada para consultar proyectos, operaciones, maquinaria, almacenes, entregas y permisos.</p>
-      <div id="googleButton"></div>
-      <div id="loginStatus" class="status hidden"></div>
-    </div>
-  </section>
-
-
-  <section id="projectsView" class="view hidden">
-    <div class="projects-head">
-      <div>
-        <div class="eyebrow">LEVITEC SITE CONTROL</div>
-        <h1>Mis proyectos</h1>
-        <p id="welcomeText" class="muted"></p>
+    <div id="syncBox" class="sync-box prelogin">
+      <div class="sync-left">
+        <span class="sync-dot"></span>
+        <div>
+          <div class="sync-title" id="syncTitle">Sincronización</div>
+          <div class="sync-detail" id="syncDetail">0 fichajes pendientes</div>
+        </div>
       </div>
-
-      <button id="globalAdminBtn" class="btn btn-secondary hidden" type="button">
-        Administración de plataforma
+      <button type="button" class="sync-action" id="syncAction" onclick="syncPendingPunches(true)">
+        SINCRONIZAR
       </button>
     </div>
 
-    <section class="global-search-card">
-      <div class="global-search-head">
-        <div>
-          <div class="eyebrow">BUSCADOR GENERAL</div>
-          <h2>Localizar pedido o material</h2>
-          <p>Busca por nº de pedido, solicitud, referencia, descripción, proveedor o persona que realizó el pedido.</p>
-        </div>
+    <div id="loginBox">
+      <div class="login-copy">
+        Identifícate con la Cuenta de Google asociada a tu ficha de trabajador.
       </div>
 
-      <form id="globalPurchaseSearchForm" class="global-search-form">
-        <div class="global-search-input-wrap">
-          <span class="global-search-icon">⌕</span>
-          <input
-            id="globalPurchaseSearchInput"
-            type="search"
-            autocomplete="off"
-            placeholder="Ej. PCLVTC26-08498, REQ-ZAZ091-0019, BRC073, Waterloo…"
-          >
-        </div>
-        <button id="globalPurchaseSearchBtn" class="btn btn-primary" type="submit">
-          Buscar
+      <div id="googleButton"></div>
+    </div>
+
+    <div id="app">
+
+      <div class="identity">
+        <div class="name" id="workerName"></div>
+        <div class="meta" id="workerEmail"></div>
+        <div class="meta" id="subcontractor"></div>
+      </div>
+
+      <label>Proyecto</label>
+
+      <select id="project">
+        <option value="">Selecciona proyecto</option>
+      </select>
+
+      <div id="subcontractorDetailBlock" style="display:none;">
+        <label>Nombre de la subcontrata</label>
+        <input
+          id="subcontractorDetail"
+          type="text"
+          maxlength="100"
+          autocomplete="organization"
+          placeholder="Indique el nombre de la empresa">
+      </div>
+
+      <div class="grid">
+        <button class="entry" onclick="punch('ENTRADA')">
+          ENTRADA
         </button>
-      </form>
 
-      <div id="globalPurchaseSearchHint" class="global-search-hint">
-        Busca en todos los proyectos a los que tienes acceso.
-      </div>
-      <div id="globalPurchaseSearchStatus" class="status hidden"></div>
-      <div id="globalPurchaseSearchResults" class="global-search-results hidden"></div>
-    </section>
-
-    <div id="projectsGrid" class="projects-grid"></div>
-
-    <div id="noProjects" class="empty-state hidden">
-      <h3>No tienes proyectos asignados</h3>
-      <p>Tu usuario está autorizado, pero no tiene proyectos activos.</p>
-    </div>
-  </section>
-
-
-  <section id="projectView" class="view hidden">
-    <div class="project-toolbar">
-      <button id="backProjectsBtn" class="btn btn-secondary" type="button">← Proyectos</button>
-      <div class="project-current">
-        <span>PROYECTO ACTUAL</span>
-        <strong id="currentProjectName"></strong>
-        <small id="currentProjectMeta"></small>
-      </div>
-    </div>
-
-    <div class="project-hero">
-      <div>
-        <div class="eyebrow">SITE CONTROL</div>
-        <h1 id="heroProjectName"></h1>
-        <p id="heroProjectSubtitle"></p>
-      </div>
-      <div id="heroProjectRole" class="hero-role"></div>
-    </div>
-
-    <div id="modulesGrid" class="modules-grid"></div>
-  </section>
-
-
-  
-
-<section id="workControlView" class="view hidden legacy-control-view">
-  <div class="section-toolbar">
-    <button id="backFromWorkControlBtn" class="btn btn-secondary" type="button">← Proyecto</button>
-    <div>
-      <div class="eyebrow">SITE · CONTROL HORARIO</div>
-      <h1>Control de trabajos</h1>
-      <p id="workControlSubtitle" class="muted"></p>
-    </div>
-  </div>
-
-  <div id="workControlStatus" class="status hidden"></div>
-
-  <section class="presence-section">
-    <div class="presence-head">
-      <div>
-        <div class="presence-title">Presencia ahora</div>
-        <div class="presence-subtitle" id="workPresenceUpdated">Cargando presencia actual…</div>
-      </div>
-      <button type="button" class="presence-refresh" id="refreshWorkPresenceBtn">ACTUALIZAR</button>
-    </div>
-    <div class="presence-kpis">
-      <div class="presence-kpi"><span>Personas</span><strong id="workPresencePeople">0</strong></div>
-      <div class="presence-kpi"><span>Subcontratas</span><strong id="workPresenceSubs">0</strong></div>
-      <div class="presence-kpi"><span>Proyectos</span><strong id="workPresenceProjectsCount">0</strong></div>
-    </div>
-    <div class="presence-projects" id="workPresenceList">
-      <div class="presence-empty">Todavía no se ha cargado la presencia.</div>
-    </div>
-  </section>
-
-  <div class="calendar-layout">
-    <div class="calendar-card">
-      <div class="calendar-head">
-        <button type="button" class="nav-btn" id="workPrevMonthBtn" aria-label="Mes anterior">‹</button>
-        <div class="calendar-title" id="workCalendarTitle"></div>
-        <button type="button" class="nav-btn" id="workNextMonthBtn" aria-label="Mes siguiente">›</button>
-      </div>
-      <div class="weekdays">
-        <div class="weekday">L</div><div class="weekday">M</div><div class="weekday">X</div><div class="weekday">J</div><div class="weekday">V</div><div class="weekday">S</div><div class="weekday">D</div>
-      </div>
-      <div class="calendar-grid" id="workCalendarGrid"></div>
-      <div class="legend"><i></i>Punto verde: partes · Punto rojo: incidencias.</div>
-    </div>
-
-    <div class="day-panel">
-      <div class="selected-date" id="workSelectedDateLabel">Selecciona un día</div>
-      <div class="summary">
-        <div class="summary-pill" id="workWorkersSummary">0 trabajadores</div>
-        <div class="summary-pill" id="workTasksSummary">0 tareas</div>
-        <div class="summary-pill" id="workPendingSummary">0 pendientes</div>
-        <div class="summary-pill" id="workIncidentsSummary">0 incidencias</div>
-      </div>
-
-      <div class="incidents-section">
-        <div class="incidents-head">
-          <div class="incidents-title">INCIDENCIAS DEL DÍA</div>
-          <div class="incidents-count" id="workIncidentPendingCount">0</div>
-        </div>
-        <div id="workIncidentsContainer" class="incidents-empty">No hay incidencias para este día.</div>
-      </div>
-
-      <div class="filters">
-        <div>
-          <label for="workProjectScope">Proyecto</label>
-          <select id="workProjectScope"></select>
-          <div id="workScopeHint" class="scope-hint"></div>
-        </div>
-        <div>
-          <label for="workSubcontractorFilter">Subcontrata</label>
-          <select id="workSubcontractorFilter"><option value="">Todas</option></select>
-        </div>
-        <div>
-          <label for="workStateFilter">Estado</label>
-          <select id="workStateFilter">
-            <option value="PENDIENTE">Pendientes</option>
-            <option value="">Todos</option>
-            <option value="VALIDADO">Validados</option>
-            <option value="REVISAR">Revisar</option>
-            <option value="RECHAZADO">Rechazados</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="workPartsContainer" class="empty-state">Selecciona un día del calendario.</div>
-    </div>
-  </div>
-</section>
-
-<section id="equipmentGlobalView" class="view hidden legacy-equipment-view">
-  <div class="section-toolbar">
-    <button id="backFromEquipmentGlobalBtn" class="btn btn-secondary" type="button">← Proyecto</button>
-    <div>
-      <div class="eyebrow">EQUIPMENT · GLOBAL</div>
-      <h1>Localización de maquinaria</h1>
-      <p class="muted">Vista global de maquinaria, independientemente del proyecto desde el que accedas.</p>
-    </div>
-  </div>
-
-  <div id="equipmentGlobalStatus" class="status hidden"></div>
-
-  <div class="equipment-toolbar">
-    <div>
-      <div class="equipment-title">Localización de maquinaria</div>
-      <div class="equipment-subtitle" id="equipmentUpdated">Todavía no se han cargado posiciones.</div>
-    </div>
-    <button type="button" class="equipment-refresh" id="refreshEquipmentGlobalBtn">ACTUALIZAR POSICIONES</button>
-  </div>
-
-  <div class="equipment-summary">
-    <div class="equipment-kpi"><span>Activos</span><strong id="equipmentGlobalCount">0</strong></div>
-    <div class="equipment-kpi"><span>Recientes</span><strong id="equipmentPositionCount">0</strong></div>
-    <div class="equipment-kpi"><span>Avisos</span><strong id="equipmentNoPositionCount">0</strong></div>
-  </div>
-
-  <div class="equipment-map-card" id="equipmentMapCard">
-    <div class="equipment-map-head">
-      <div class="equipment-map-head-left">
-        <span class="equipment-map-head-title">Plano operativo del campus</span>
-        <span class="equipment-map-head-sub">Base calibrada · edificios y viales de referencia</span>
-      </div>
-      <div class="equipment-map-actions">
-        <span>🟢 &lt;10 min · 🟠 10–30 min · 🔴 &gt;30 min</span>
-        <button type="button" class="equipment-map-action active" id="equipmentCleanMap">BASE LIMPIA</button>
-        <button type="button" class="equipment-map-action" id="equipmentFullscreen">AMPLIAR</button>
-      </div>
-    </div>
-    <div class="equipment-map-viewport" id="equipmentMapViewport">
-      <div class="equipment-map-stage" id="equipmentMapStage">
-        <img src="campus-location-map-clean.png" id="equipmentCampusMap" class="equipment-campus-map clean-base" alt="Plano general del campus">
-        <div class="equipment-site-layer" id="equipmentSiteLayer"></div>
-        <div class="equipment-marker-layer" id="equipmentMarkerLayer"></div>
-        <div class="equipment-detail-pop" id="equipmentDetailPop"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="equipment-filter-row">
-    <select id="equipmentGlobalProjectFilter"><option value="">Todos los proyectos</option></select>
-    <select id="equipmentTypeFilter"><option value="">Todos los tipos</option></select>
-    <input id="equipmentGlobalSearch" type="search" placeholder="Buscar equipo…">
-  </div>
-  <div id="equipmentGlobalList" class="equipment-list">
-    <div class="equipment-empty">Pulsa actualizar para cargar las posiciones.</div>
-  </div>
-</section>
-
-<section id="warehouseView" class="view hidden">
-
-  <div class="section-toolbar">
-    <button id="backFromWarehouseBtn" class="btn btn-secondary" type="button">← Proyecto</button>
-
-    <div>
-      <div class="eyebrow">WAREHOUSE</div>
-      <h1>Almacenes</h1>
-      <p id="warehouseProjectSubtitle" class="muted"></p>
-    </div>
-
-    <button id="newMaterialRequestBtn" class="btn btn-primary" type="button">
-      + Solicitar material
-    </button>
-  </div>
-
-  <div id="warehouseStatus" class="status hidden"></div>
-
-  <div class="warehouse-selector-row">
-    <label>
-      <span>Almacén</span>
-      <select id="warehouseSelect"></select>
-    </label>
-
-    <div id="warehouseMeta" class="warehouse-meta"></div>
-  </div>
-
-  <div class="warehouse-summary">
-    <div><span>REFERENCIAS</span><strong id="warehouseSkuCount">0</strong></div>
-    <div><span>EN CUARENTENA</span><strong id="warehouseQuarantineCount">0</strong></div>
-    <div><span>SOLICITUDES ABIERTAS</span><strong id="warehouseOpenRequestsCount">0</strong></div>
-  </div>
-
-  <div class="warehouse-tabs">
-    <button class="warehouse-tab active" data-tab="stock" type="button">Stock</button>
-    <button class="warehouse-tab" data-tab="requests" type="button">Solicitudes</button>
-    <button class="warehouse-tab" data-tab="zones" type="button">Zonas</button>
-  </div>
-
-  <div id="warehouseStockPanel" class="warehouse-panel">
-    <div class="warehouse-table-wrap">
-      <table class="warehouse-table">
-        <thead>
-          <tr>
-            <th>Referencia</th>
-            <th>Descripción</th>
-            <th>Zona</th>
-            <th>Cantidad</th>
-            <th>Estado</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="warehouseStockBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div id="warehouseRequestsPanel" class="warehouse-panel hidden">
-    <div id="warehouseRequestsList" class="warehouse-requests-list"></div>
-  </div>
-
-  <div id="warehouseZonesPanel" class="warehouse-panel hidden">
-    <div class="zones-head">
-      <h2>Zonas del almacén</h2>
-      <button id="newZoneBtn" class="btn btn-secondary btn-sm" type="button">+ Nueva zona</button>
-    </div>
-    <div id="warehouseZonesList" class="zones-grid"></div>
-  </div>
-
-</section>
-
-
-<section id="mechanicalView" class="view hidden">
-  <div class="section-toolbar mechanical-toolbar">
-    <button id="backFromMechanicalBtn" class="btn btn-secondary" type="button">← Proyecto</button>
-    <div>
-      <div class="eyebrow">MECHANICAL · PREPARACIÓN DOCUMENTAL</div>
-      <h1>Preparación documental para ejecución</h1>
-      <p id="mechanicalProjectSubtitle" class="muted"></p>
-    </div>
-    <button id="newMechanicalSubmittalBtn" class="btn btn-primary" type="button">+ Añadir submittal</button>
-  </div>
-
-  <div id="mechanicalStatus" class="status hidden"></div>
-
-  <div class="mechanical-top-kpis">
-    <div class="mechanical-top-kpi">
-      <span>HITOS CON SEGUIMIENTO</span>
-      <strong id="mechanicalMilestoneCount">0</strong>
-      <small>hitos con submittals asociados</small>
-    </div>
-    <div class="mechanical-top-kpi ready">
-      <span>LISTOS PARA EJECUTAR</span>
-      <strong id="mechanicalReadyCount">0</strong>
-      <small>100% de submittals en A</small>
-    </div>
-    <div class="mechanical-top-kpi risk">
-      <span>EN RIESGO / BLOQUEADOS</span>
-      <strong id="mechanicalRiskCount">0</strong>
-      <small>requieren acción documental</small>
-    </div>
-    <div class="mechanical-top-kpi">
-      <span>SUBMITTALS EN A</span>
-      <strong id="mechanicalApprovedCount">0</strong>
-      <small id="mechanicalApprovedMeta">de 0 submittals</small>
-    </div>
-  </div>
-
-  <div class="mechanical-section-head">
-    <div>
-      <div class="eyebrow">HITOS CONSTRUCTIVOS</div>
-      <h2>Preparación documental por hito</h2>
-      <p class="muted">Cada hito exige únicamente los submittals que realmente aplican a esa actividad.</p>
-    </div>
-  </div>
-
-  <div id="mechanicalReadinessGrid" class="mechanical-readiness-grid"></div>
-
-  <div class="mechanical-submittals-section">
-    <div class="mechanical-section-head">
-      <div>
-        <div class="eyebrow">PAQUETE MECHANICAL · SUBPAQUETES</div>
-        <h2>Tracker de submittals</h2>
-        <p class="muted">Submittals individuales del tracker, agrupados por subpaquete. Puedes añadir manualmente cualquier documento que falte.</p>
-      </div>
-    </div>
-
-    <div id="mechanicalSubpackageSummary" class="mechanical-subpackage-summary"></div>
-
-    <div class="mechanical-submittal-filters">
-      <input id="mechanicalSubmittalSearch" type="search" placeholder="Buscar número, título, subpaquete o responsable…">
-      <select id="mechanicalSubpackageFilter">
-        <option value="">Todos los subpaquetes</option>
-      </select>
-      <select id="mechanicalSubmittalStatusFilter">
-        <option value="">Todos los estados</option>
-        <option value="A">A · Aprobado</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="D">D · No revisado / no aplica</option>
-        <option value="SUBMITTED">Enviado</option>
-        <option value="PENDING">Pendiente</option>
-        <option value="REJECTED">Rechazado</option>
-      </select>
-    </div>
-
-    <div class="mechanical-package-table-wrap">
-      <table class="mechanical-package-table mechanical-submittal-table">
-        <thead>
-          <tr>
-            <th>Submittal</th>
-            <th>Subpaquete</th>
-            <th>Estado</th>
-            <th>Rev.</th>
-            <th>Responsable</th>
-            <th>Fecha prevista</th>
-            <th>Hitos</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="mechanicalSubmittalBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="mechanical-fok-section">
-    <div class="mechanical-section-head">
-      <div>
-        <div class="eyebrow">FIRST OF A KIND · MECHANICAL</div>
-        <h2>Tracker de FoK</h2>
-        <p class="muted">Mismo catálogo para ZAZ081 y ZAZ091, con seguimiento independiente por proyecto.</p>
-      </div>
-    </div>
-
-    <div id="fokCrossSiteNotice" class="fok-cross-site-notice hidden"></div>
-
-    <div class="mechanical-submittal-filters">
-      <input id="fokSearch" type="search" placeholder="Buscar FoK, categoría o benchmark…">
-      <select id="fokCategoryFilter">
-        <option value="">Todas las categorías</option>
-      </select>
-      <select id="fokExecutionFilter">
-        <option value="">Todos los estados</option>
-        <option value="NOT_PLANNED">No planificado</option>
-        <option value="PLANNED">Planificado</option>
-        <option value="INSPECTED">Inspección realizada</option>
-        <option value="APPROVED">Aprobado</option>
-        <option value="REINSPECTION">Reinspección</option>
-      </select>
-    </div>
-
-    <div class="mechanical-package-table-wrap">
-      <table class="mechanical-package-table mechanical-submittal-table">
-        <thead>
-          <tr>
-            <th>FoK</th>
-            <th>Categoría</th>
-            <th>Documentación</th>
-            <th>Ejecución</th>
-            <th>Inspección</th>
-            <th>Otro site</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="fokBody"></tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<section id="deliveriesView" class="view hidden">
-  <div class="section-toolbar deliveries-toolbar">
-    <button id="backFromDeliveriesBtn" class="btn btn-secondary" type="button">← Proyecto</button>
-    <div>
-      <div class="eyebrow">DELIVERIES · CONSTRUCCIÓN</div>
-      <h1>Entregas e hitos constructivos</h1>
-      <p id="deliveriesProjectSubtitle" class="muted"></p>
-    </div>
-    <button id="newMilestoneBtn" class="btn btn-primary" type="button">+ Hito constructivo</button>
-    <div class="calendar-nav">
-      <button id="prevMonthBtn" class="btn btn-secondary" type="button">←</button>
-      <strong id="calendarMonthLabel"></strong>
-      <button id="nextMonthBtn" class="btn btn-secondary" type="button">→</button>
-      <button id="todayMonthBtn" class="btn btn-secondary" type="button">Hoy</button>
-    </div>
-  </div>
-
-  <div class="delivery-summary">
-    <div><span>PRÓXIMAS</span><strong id="deliveryUpcomingCount">0</strong></div>
-    <div><span>RETRASADAS</span><strong id="deliveryLateCount">0</strong></div>
-    <div><span>RECIBIDAS</span><strong id="deliveryReceivedCount">0</strong></div>
-  </div>
-
-  <div id="deliveryStatus" class="status hidden"></div>
-
-  <div class="calendar-shell">
-    <div id="deliveryCalendar" class="delivery-calendar"></div>
-  </div>
-
-  <div class="milestone-section">
-    <div class="milestone-section-head">
-      <div>
-        <div class="eyebrow">PLANIFICACIÓN DE OBRA</div>
-        <h2>Hitos constructivos</h2>
-        <p class="muted">Referencia las llegadas de equipos contra fechas clave de construcción.</p>
-      </div>
-    </div>
-    <div id="constructionMilestoneList" class="milestone-list"></div>
-  </div>
-
-  <div class="delivery-list-head">
-    <h2>Entregas del proyecto</h2>
-    <div class="delivery-filters">
-      <button class="delivery-filter active" data-filter="ALL" type="button">Todas</button>
-      <button class="delivery-filter" data-filter="UPCOMING" type="button">Próximas</button>
-      <button class="delivery-filter" data-filter="LATE" type="button">Retrasadas</button>
-      <button class="delivery-filter" data-filter="RECEIVED" type="button">Recibidas</button>
-    </div>
-  </div>
-
-  <div id="deliveryList" class="delivery-list"></div>
-</section>
-
-<section id="globalAdminView" class="view hidden">
-    <div class="section-toolbar">
-      <button id="backFromGlobalAdminBtn" class="btn btn-secondary" type="button">← Mis proyectos</button>
-      <div>
-        <div class="eyebrow">ADMINISTRACIÓN DE PLATAFORMA</div>
-        <h1>Proyectos</h1>
-        <p class="muted">Alta, edición y activación de proyectos de la plataforma.</p>
-      </div>
-      <button id="newProjectBtn" class="btn btn-primary" type="button">+ Nuevo proyecto</button>
-    </div>
-
-    <div id="adminProjectStatus" class="status hidden"></div>
-    <div id="adminProjectsList" class="admin-projects-list"></div>
-  </section>
-
-
-  <section id="purchasesView" class="view hidden">
-    <div class="section-toolbar">
-      <button id="backFromPurchasesBtn" class="btn btn-secondary" type="button">← Proyecto</button>
-      <div>
-        <div class="eyebrow">COMPRAS / ADMINISTRACIÓN</div>
-        <h1>Solicitudes de pedido</h1>
-        <p id="purchasesProjectSubtitle" class="muted"></p>
-      </div>
-      <button id="newPurchaseBtn" class="btn btn-primary" type="button">+ Solicitar pedido</button>
-    </div>
-
-    <div class="purchase-summary">
-      <div><span>TOTAL</span><strong id="purchaseCountTotal">0</strong></div>
-      <div><span>PENDIENTES</span><strong id="purchaseCountPending">0</strong></div>
-      <div><span>EMITIDOS</span><strong id="purchaseCountIssued">0</strong></div>
-    </div>
-
-    <div class="purchase-list-toolbar">
-      <div>
-        <span class="purchase-filter-label">Estado</span>
-        <select id="purchaseStatusFilter">
-          <option value="">Todos los estados</option>
-          <option value="PENDIENTE_ADMINISTRACION">Pendiente administración</option>
-          <option value="EN_TRAMITACION">En tramitación</option>
-          <option value="PEDIDO_EMITIDO">Pedido emitido</option>
-          <option value="CONFIRMADO_PROVEEDOR">Confirmado proveedor</option>
-          <option value="CANCELADO">Cancelado</option>
-        </select>
-      </div>
-      <span id="purchaseFilterCount" class="purchase-filter-count"></span>
-    </div>
-
-    <div id="purchaseStatus" class="status hidden"></div>
-    <div id="purchaseList" class="purchase-list"></div>
-  </section>
-
-</main>
-
-
-
-<div id="workIncidentCorrectionModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-card work-correction-modal">
-    <div class="modal-head">
-      <div>
-        <div class="eyebrow">CONTROL DE TRABAJOS</div>
-        <h2>Corregir incidencia</h2>
-        <p id="workCorrectionIncidentText" class="muted modal-sub"></p>
-      </div>
-      <button id="closeWorkCorrectionModalBtn" class="icon-btn" type="button">×</button>
-    </div>
-
-    <div id="workCorrectionFields" class="work-correction-fields"></div>
-
-    <div class="modal-actions">
-      <button id="cancelWorkCorrectionBtn" class="btn btn-secondary" type="button">Cancelar</button>
-      <button id="saveWorkCorrectionBtn" class="btn btn-primary" type="button">Aplicar corrección</button>
-    </div>
-  </div>
-</div>
-
-<div id="projectModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-card">
-    <div class="modal-head">
-      <div>
-        <div class="eyebrow">ADMINISTRACIÓN DE PLATAFORMA</div>
-        <h2 id="projectModalTitle">Nuevo proyecto</h2>
-      </div>
-      <button id="closeProjectModalBtn" class="icon-btn" type="button">×</button>
-    </div>
-
-    <form id="projectForm" class="stack-form">
-      <input type="hidden" id="projectFormMode" value="create">
-
-      <label>
-        <span>ID del proyecto</span>
-        <input id="projectIdInput" type="text" placeholder="Ej. ZAZ172" required>
-      </label>
-
-      <label>
-        <span>Nombre</span>
-        <input id="projectNameInput" type="text" placeholder="Ej. ZAZ172">
-      </label>
-
-      <label>
-        <span>Campus</span>
-        <input id="projectCampusInput" type="text" placeholder="Ej. HUESCA">
-      </label>
-
-      <label class="check-row">
-        <input id="projectActiveInput" type="checkbox" checked>
-        <span>Proyecto activo</span>
-      </label>
-
-      <div class="modal-actions">
-        <button id="cancelProjectBtn" class="btn btn-secondary" type="button">Cancelar</button>
-        <button class="btn btn-primary" type="submit">Guardar</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-
-<div id="purchaseModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-card modal-wide">
-    <div class="modal-head">
-      <div>
-        <div class="eyebrow">COMPRAS / ADMINISTRACIÓN</div>
-        <h2>Nueva solicitud de pedido</h2>
-        <p id="purchaseModalProject" class="muted modal-sub"></p>
-      </div>
-      <button id="closePurchaseModalBtn" class="icon-btn" type="button">×</button>
-    </div>
-
-    <form id="purchaseForm" class="purchase-form">
-
-      <input type="hidden" id="purchaseClientRequestId">
-
-      <div class="form-grid two">
-        <label>
-          <span>Proveedor *</span>
-          <input id="purchaseSupplier" type="text" list="supplierSuggestions" placeholder="Ej. George Fischer" required>
-          <datalist id="supplierSuggestions"></datalist>
-        </label>
-
-        <label>
-          <span>Fecha requerida *</span>
-          <input id="purchaseRequiredDate" type="date" required>
-        </label>
-
-        <label>
-          <span>Destino</span>
-          <input id="purchaseDestination" type="text" list="destinationSuggestions" placeholder="Ej. Nave 9">
-          <datalist id="destinationSuggestions"></datalist>
-        </label>
-
-        <label>
-          <span>Tipo de destino</span>
-          <select id="purchaseDestinationType">
-            <option value="ALMACEN">Almacén</option>
-            <option value="CAMPA">Campa</option>
-            <option value="OBRA">Obra</option>
-            <option value="OTRO">Otro</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="form-section-head">
-        <div>
-          <strong>Materiales</strong>
-          <span>Empieza por la referencia: si ya se usó antes, completaremos descripción y precio.</span>
-        </div>
-        <button id="addMaterialRowBtn" class="btn btn-secondary btn-sm" type="button">+ Añadir línea</button>
-      </div>
-
-      <div id="materialsRows" class="materials-rows"></div>
-      <datalist id="materialReferenceSuggestions"></datalist>
-
-      <label>
-        <span>Observaciones / instrucciones de pedido</span>
-        <textarea id="purchaseNotes" rows="4" placeholder="Sustituciones, notas al proveedor, condiciones especiales..."></textarea>
-      </label>
-
-      <label class="purchase-quote-upload">
-        <span>Adjuntar oferta PDF <small>(opcional)</small></span>
-        <input id="purchaseQuotePdf" type="file" accept="application/pdf,.pdf">
-        <small class="purchase-quote-help">
-          Se enviará al administrativo junto con la solicitud. No se guardará en Site Control ni en Drive.
-        </small>
-      </label>
-
-      <details class="advanced-fields">
-        <summary>Datos adicionales</summary>
-
-        <div class="form-grid two advanced-grid">
-          <label>
-            <span>Familia / imputación</span>
-            <input id="purchaseFamily" type="text" list="familySuggestions" placeholder="Ej. 208 Tubería">
-            <datalist id="familySuggestions"></datalist>
-          </label>
-
-          <label>
-            <span>Oferta / presupuesto</span>
-            <input id="purchaseQuoteRef" type="text" placeholder="Referencia, nº oferta o enlace">
-          </label>
-
-          <label class="span-2">
-            <span>Dirección de entrega</span>
-            <input id="purchaseAddress" type="text" placeholder="Se completa si ya conocemos el destino">
-          </label>
-
-          <label class="span-2">
-            <span>Contacto en obra</span>
-            <input id="purchaseContact" type="text" placeholder="Se completa si ya conocemos el destino">
-          </label>
-        </div>
-      </details>
-
-      <div class="modal-actions">
-        <button id="cancelPurchaseBtn" class="btn btn-secondary" type="button">Cancelar</button>
-        <button id="submitPurchaseBtn" class="btn btn-primary" type="submit">Crear solicitud</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-
-
-<div id="purchaseWorkflowModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-
-  <div class="modal-card modal-wide">
-    <div class="modal-head">
-      <div>
-        <div class="eyebrow">TRAMITACIÓN DE PEDIDO</div>
-        <h2 id="workflowRequestId">Solicitud</h2>
-        <p id="workflowRequestMeta" class="muted modal-sub"></p>
-      </div>
-
-      <button id="closeWorkflowModalBtn" class="icon-btn" type="button">×</button>
-    </div>
-
-    <div class="workflow-layout">
-
-      <section class="workflow-request">
-        <div class="workflow-highlight-grid">
-          <div class="workflow-highlight">
-            <span>Proveedor</span>
-            <strong id="workflowSupplier"></strong>
-          </div>
-
-          <div class="workflow-highlight family-highlight">
-            <span>Familia / imputación</span>
-            <strong id="workflowFamilyDisplay"></strong>
-          </div>
-
-          <div class="workflow-highlight">
-            <span>Fecha requerida</span>
-            <strong id="workflowRequiredDate"></strong>
-          </div>
-
-          <div class="workflow-highlight">
-            <span>Destino</span>
-            <strong id="workflowDestination"></strong>
-          </div>
-        </div>
-
-        <div id="workflowMaterials" class="workflow-materials"></div>
-
-        <div class="workflow-notes-block">
-          <span>Observaciones</span>
-          <div id="workflowNotes"></div>
-        </div>
-      </section>
-
-      <section class="workflow-admin-panel">
-        <div class="eyebrow">ADMINISTRACIÓN</div>
-
-        <label>
-          <span>Familia / imputación *</span>
-          <input id="workflowFamilyInput" type="text" placeholder="Ej. 208 Tubería">
-        </label>
-
-        <label>
-          <span>Estado</span>
-          <select id="workflowStatusInput">
-            <option value="PENDIENTE_ADMINISTRACION">Pendiente administración</option>
-            <option value="EN_TRAMITACION">En tramitación</option>
-            <option value="PEDIDO_EMITIDO">Pedido emitido</option>
-            <option value="CONFIRMADO_PROVEEDOR">Confirmado proveedor</option>
-            <option value="CANCELADO">Cancelado</option>
-          </select>
-        </label>
-
-        <label>
-          <span>Nº PO / Sage</span>
-          <input id="workflowPoInput" type="text" placeholder="Ej. PCLVTC26-08498">
-        </label>
-
-        <label>
-          <span>Fecha prevista de entrega</span>
-          <input id="workflowExpectedDateInput" type="date">
-        </label>
-
-        <div class="workflow-help">
-          Para emitir el pedido son obligatorios <strong>familia</strong> y <strong>PO/Sage</strong>.
-          Para marcarlo como confirmado por proveedor, también se exige la fecha prevista de entrega.
-        </div>
-
-        <button id="saveWorkflowBtn" class="btn btn-primary workflow-save" type="button">
-          Guardar tramitación
+        <button class="exit" onclick="punch('SALIDA')">
+          SALIDA
         </button>
-      </section>
-
-    </div>
-  </div>
-</div>
-
-
-<div id="materialRequestModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-card">
-    <div class="modal-head">
-      <div>
-        <div class="eyebrow">WAREHOUSE</div>
-        <h2>Solicitar material</h2>
-      </div>
-      <button id="closeMaterialRequestModalBtn" class="icon-btn" type="button">×</button>
-    </div>
-
-    <form id="materialRequestForm" class="stack-form material-request-form">
-      <label>
-        <span>Almacén origen</span>
-        <select id="materialRequestWarehouse"></select>
-      </label>
-
-      <div class="material-finder-grid">
-        <label>
-          <span>Buscar material</span>
-          <input id="materialRequestSearch" type="search" autocomplete="off" placeholder="Referencia o descripción...">
-        </label>
-
-        <label>
-          <span>Filtrar por zona</span>
-          <select id="materialRequestZoneFilter">
-            <option value="">Todas las zonas</option>
-          </select>
-        </label>
       </div>
 
-      <div id="materialRequestResults" class="material-search-results"></div>
+      <button type="button" class="incident-link" onclick="openIncidentModal()">
+        REPORTAR INCIDENCIA
+      </button>
 
-      <div id="materialRequestSelected" class="material-selected hidden">
-        <div class="material-selected-head">
-          <div>
-            <span class="material-selected-kicker">MATERIAL SELECCIONADO</span>
-            <strong id="materialRequestSelectedTitle"></strong>
-            <small id="materialRequestSelectedDescription"></small>
-          </div>
-          <button id="clearMaterialRequestSelectionBtn" class="btn btn-secondary btn-sm" type="button">Cambiar</button>
+      <div class="small">
+        La identidad procede de Google y no puede editarse.
+        La ubicación se solicita únicamente al realizar un fichaje.
+      </div>
+
+      <div class="app-footer">
+        <span class="dev-signature">Desarrollado por David Ferrando</span>
+      </div>
+
+    </div>
+
+
+
+    <div id="incidentModal" class="incident-modal" aria-hidden="true">
+      <div class="incident-sheet">
+        <h2>Reportar incidencia</h2>
+
+        <div class="incident-intro">
+          Úsalo si has olvidado un fichaje, has seleccionado un proyecto incorrecto
+          o necesitas dejar constancia de un problema.
         </div>
-        <div class="material-selected-stats">
-          <div><span>Disponible</span><strong id="materialRequestAvailable">0</strong></div>
-          <div><span>Zonas</span><strong id="materialRequestZones">—</strong></div>
-          <div><span>En cuarentena</span><strong id="materialRequestQuarantine">0</strong></div>
-        </div>
-      </div>
 
-      <input id="materialRequestReference" type="hidden">
-      <input id="materialRequestDescription" type="hidden">
-
-      <label>
-        <span>Cantidad solicitada *</span>
-        <input id="materialRequestQuantity" type="number" min="0.001" step="0.001" placeholder="Selecciona primero un material" required disabled>
-        <small id="materialRequestQuantityHint" class="field-hint"></small>
-      </label>
-
-      <label>
-        <span>Observaciones</span>
-        <textarea id="materialRequestNotes" rows="4" placeholder="Destino en obra, urgencia, comentarios..."></textarea>
-      </label>
-
-      <div id="materialRequestStatus" class="status hidden"></div>
-
-      <div class="modal-actions">
-        <button id="cancelMaterialRequestBtn" class="btn btn-secondary" type="button">Cancelar</button>
-        <button id="submitMaterialRequestBtn" class="btn btn-primary" type="submit" disabled>Solicitar</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-
-<div id="warehouseZoneModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-card">
-    <div class="modal-head">
-      <div>
-        <div class="eyebrow">CONFIGURACIÓN ALMACÉN</div>
-        <h2>Nueva zona</h2>
-      </div>
-      <button id="closeWarehouseZoneModalBtn" class="icon-btn" type="button">×</button>
-    </div>
-
-    <form id="warehouseZoneForm" class="stack-form">
-      <label>
-        <span>ID zona</span>
-        <input id="warehouseZoneId" type="text" placeholder="Ej. A01" required>
-      </label>
-
-      <label>
-        <span>Nombre</span>
-        <input id="warehouseZoneName" type="text" placeholder="Ej. Tubería COOL-FIT" required>
-      </label>
-
-      <label>
-        <span>Tipo</span>
-        <select id="warehouseZoneType">
-          <option value="STORAGE">Almacenaje</option>
-          <option value="QUARANTINE">Cuarentena</option>
-          <option value="RECEIVING">Recepción</option>
-          <option value="STAGING">Preparación / Salida</option>
-        </select>
-      </label>
-
-      <div class="modal-actions">
-        <button id="cancelWarehouseZoneBtn" class="btn btn-secondary" type="button">Cancelar</button>
-        <button class="btn btn-primary" type="submit">Crear zona</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<div id="constructionMilestoneModal" class="modal hidden milestone-modal">
-  <div class="modal-backdrop"></div>
-  <div class="modal-card milestone-modal-card">
-    <div class="modal-head">
-      <div>
-        <div class="eyebrow">PLANIFICACIÓN DE OBRA</div>
-        <h2 id="constructionMilestoneModalTitle">Nuevo hito constructivo</h2>
-        <p class="muted modal-sub">Fecha clave contra la que referenciar la llegada de equipos.</p>
-      </div>
-      <button id="closeConstructionMilestoneModalBtn" class="icon-btn" type="button">×</button>
-    </div>
-
-    <form id="constructionMilestoneForm" class="milestone-form">
-      <input id="constructionMilestoneId" type="hidden">
-
-      <label class="field-span-2">
-        <span>Nombre del hito *</span>
-        <input id="constructionMilestoneTitle" type="text" maxlength="160" required
-          placeholder="Ej. L3 - Mechanical Complete / Inicio commissioning">
-      </label>
-
-      <label>
-        <span>Fecha *</span>
-        <input id="constructionMilestoneDate" type="date" required>
-      </label>
-
-      <label>
-        <span>Tipo</span>
-        <select id="constructionMilestoneType">
-          <option value="CONSTRUCTIVO">Constructivo</option>
-          <option value="COMMISSIONING">Commissioning</option>
-          <option value="PFHO">PFHO</option>
-          <option value="ENERGIZACION">Energización</option>
-          <option value="HANDOVER">Handover</option>
+        <label for="incidentType">Tipo de incidencia</label>
+        <select id="incidentType">
+          <option value="">Selecciona un tipo</option>
+          <option value="OLVIDO_ENTRADA">Olvido de ENTRADA</option>
+          <option value="OLVIDO_SALIDA">Olvido de SALIDA</option>
+          <option value="PROYECTO_INCORRECTO">Proyecto incorrecto</option>
+          <option value="FICHAJE_NO_REGISTRADO">Fichaje no registrado</option>
           <option value="OTRO">Otro</option>
         </select>
-      </label>
 
-      <label>
-        <span>Disciplina</span>
-        <select id="constructionMilestoneDiscipline">
-          <option value="">General</option>
-          <option value="MECHANICAL">Mechanical</option>
-          <option value="ELECTRICAL">Electrical</option>
+        <label for="incidentDate">Fecha afectada</label>
+        <input id="incidentDate" type="date">
+
+        <label for="incidentProject">Proyecto</label>
+        <select id="incidentProject">
+          <option value="">Sin especificar</option>
         </select>
-      </label>
 
-      <label class="field-span-2">
-        <span>Notas</span>
-        <textarea id="constructionMilestoneNotes" rows="4"
-          placeholder="Alcance, condición previa, fase, zona, observaciones..."></textarea>
-      </label>
+        <label for="incidentTime">Hora aproximada (opcional)</label>
+        <input id="incidentTime" type="time">
 
-      <div class="modal-actions field-span-2">
-        <button id="deleteConstructionMilestoneBtn" class="btn btn-danger hidden" type="button">Eliminar</button>
-        <span class="modal-actions-spacer"></span>
-        <button id="cancelConstructionMilestoneBtn" class="btn btn-secondary" type="button">Cancelar</button>
-        <button class="btn btn-primary" type="submit">Guardar hito</button>
+        <label for="incidentDescription">Descripción</label>
+        <textarea
+          id="incidentDescription"
+          maxlength="500"
+          placeholder="Explica brevemente qué ha ocurrido."></textarea>
+
+        <div id="incidentFeedback" class="incident-feedback"></div>
+
+        <div class="incident-actions">
+          <button type="button" class="incident-cancel" onclick="closeIncidentModal()">
+            CANCELAR
+          </button>
+
+          <button type="button" class="incident-send" id="incidentSendButton" onclick="submitIncident()">
+            ENVIAR
+          </button>
+        </div>
       </div>
+    </div>
+
+    <div id="taskModal" class="task-modal" aria-hidden="true">
+      <div class="task-sheet">
+        <h2>Trabajo realizado</h2>
+        <div class="task-sheet-intro">
+          Indica las tareas realizadas durante este periodo antes de registrar la salida.
+        </div>
+
+        <div id="taskRows"></div>
+
+        <button type="button" class="add-task" id="addTaskButton" onclick="addTaskRow()">
+          + AÑADIR OTRA TAREA
+        </button>
+
+        <div class="task-counter" id="taskCounter">1 de 5 tareas</div>
+
+        <div class="task-actions">
+          <button type="button" class="task-cancel" onclick="closeTaskModal()">
+            CANCELAR
+          </button>
+          <button type="button" class="task-confirm" onclick="confirmExitTasks()">
+            CONFIRMAR SALIDA
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <iframe
+      name="backendFrame"
+      id="backendFrame"
+      style="display:none;">
+    </iframe>
+
+    <form
+      id="backendForm"
+      method="POST"
+      target="backendFrame"
+      style="display:none;">
+
+      <input name="action" id="f_action">
+      <input name="credential" id="f_credential">
+      <input name="token" id="f_token">
+      <input name="project" id="f_project">
+      <input name="movement" id="f_movement">
+      <input name="lat" id="f_lat">
+      <input name="lon" id="f_lon">
+      <input name="accuracy" id="f_accuracy">
+      <input name="subcontractorDetail" id="f_subcontractorDetail">
+      <input name="tasksJson" id="f_tasksJson">
+      <input name="clientEventId" id="f_clientEventId">
+      <input name="clientTimestamp" id="f_clientTimestamp">
+      <input name="requestId" id="f_requestId">
+      <input name="queuedOffline" id="f_queuedOffline">
+      <input name="incidentType" id="f_incidentType">
+      <input name="incidentDate" id="f_incidentDate">
+      <input name="incidentProject" id="f_incidentProject">
+      <input name="incidentTime" id="f_incidentTime">
+      <input name="incidentDescription" id="f_incidentDescription">
+
     </form>
+
   </div>
 </div>
 
-
-<div id="mechanicalSubmittalModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-card mechanical-submittal-modal">
-    <div class="modal-head">
-      <div>
-        <div class="eyebrow">MECHANICAL · SUBMITTAL INDIVIDUAL</div>
-        <h2 id="mechanicalSubmittalModalTitle">Añadir submittal</h2>
-        <p class="muted modal-sub">Añade un documento del tracker o uno adicional necesario para obra.</p>
-      </div>
-      <button id="closeMechanicalSubmittalModalBtn" class="icon-btn" type="button">×</button>
-    </div>
-
-    <form id="mechanicalSubmittalForm">
-      <input id="mechanicalSubmittalId" type="hidden">
-
-      <div class="submittal-form-section">
-        <div class="submittal-form-section-head">
-          <span>01</span>
-          <div>
-            <strong>Identificación</strong>
-            <small>Subpaquete y referencia documental</small>
-          </div>
-        </div>
-
-        <div class="form-grid mechanical-form-grid">
-          <label>
-            <span>Subpaquete *</span>
-            <select id="mechanicalSubmittalSubpackage" required></select>
-          </label>
-
-          <label>
-            <span>Nº tracker</span>
-            <input id="mechanicalSubmittalTrackerNumber" type="text" placeholder="Ej. 0006.03">
-          </label>
-
-          <label id="mechanicalNewSubpackageWrap" class="span-2 hidden">
-            <span>Nuevo subpaquete *</span>
-            <input id="mechanicalNewSubpackage" type="text" placeholder="Ej. Fuel Controls">
-          </label>
-
-          <label class="span-2">
-            <span>Nº técnico</span>
-            <input id="mechanicalSubmittalTechnicalNumber" type="text" placeholder="ZAZ091-CAF-10-XX-SU-M-....">
-          </label>
-
-          <label class="span-2">
-            <span>Título del submittal *</span>
-            <input id="mechanicalSubmittalTitle" type="text" placeholder="Ej. Fuel distribution pipework" required>
-          </label>
-        </div>
-      </div>
-
-      <div class="submittal-form-section">
-        <div class="submittal-form-section-head">
-          <span>02</span>
-          <div>
-            <strong>Estado documental</strong>
-            <small>Situación actual del documento</small>
-          </div>
-        </div>
-
-        <div class="form-grid mechanical-form-grid">
-          <label>
-            <span>Estado</span>
-            <select id="mechanicalSubmittalStatus">
-              <option value="PENDING">Pendiente</option>
-              <option value="SUBMITTED">Enviado</option>
-              <option value="A">A · Aprobado</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D · No revisado / no aplica</option>
-              <option value="REJECTED">Rechazado</option>
-            </select>
-          </label>
-
-          <label>
-            <span>Revisión</span>
-            <input id="mechanicalSubmittalRevision" type="text" placeholder="Ej. 02">
-          </label>
-
-          <label>
-            <span>Responsable / revisor</span>
-            <input id="mechanicalSubmittalOwner" type="text" placeholder="Ej. ARUP">
-          </label>
-        </div>
-      </div>
-
-      <div class="submittal-form-section">
-        <div class="submittal-form-section-head">
-          <span>03</span>
-          <div>
-            <strong>Planificación</strong>
-            <small>Fechas y observaciones para seguimiento</small>
-          </div>
-        </div>
-
-        <div class="form-grid mechanical-form-grid">
-          <label>
-            <span>Fecha planificada</span>
-            <input id="mechanicalSubmittalPlannedDate" type="date">
-          </label>
-
-          <label>
-            <span>Fecha prevista de aprobación</span>
-            <input id="mechanicalSubmittalForecast" type="date">
-          </label>
-
-          <label class="span-2">
-            <span>Observaciones</span>
-            <textarea id="mechanicalSubmittalNotes" rows="4" placeholder="Comentarios, dependencia, feedback pendiente…"></textarea>
-          </label>
-        </div>
-      </div>
-
-      <div class="modal-actions mechanical-modal-actions">
-        <button id="deleteMechanicalSubmittalBtn" class="btn btn-danger hidden" type="button">Eliminar</button>
-        <div class="modal-actions-right">
-          <button id="cancelMechanicalSubmittalBtn" class="btn btn-secondary" type="button">Cancelar</button>
-          <button class="btn btn-primary" type="submit">Guardar submittal</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-
-<div id="milestoneSubmittalModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-card milestone-submittal-selector-modal">
-    <div class="modal-head">
-      <div>
-        <div class="eyebrow">MECHANICAL · DOCUMENTOS APLICABLES AL HITO</div>
-        <h2 id="milestoneSubmittalModalTitle">Seleccionar submittals</h2>
-        <p id="milestoneSubmittalModalMeta" class="muted modal-sub"></p>
-      </div>
-      <button id="closeMilestoneSubmittalModalBtn" class="icon-btn" type="button">×</button>
-    </div>
-
-    <div class="milestone-selector-help">
-      Marca únicamente los submittals que deben estar en <strong>Estado A</strong> antes de poder ejecutar este hito.
-    </div>
-
-    <div class="milestone-selector-toolbar">
-      <input id="milestoneSubmittalSearch" type="search" placeholder="Buscar submittal…">
-      <button id="milestoneSelectAllVisibleBtn" class="btn btn-secondary btn-sm" type="button">Seleccionar visibles</button>
-      <button id="milestoneClearVisibleBtn" class="btn btn-secondary btn-sm" type="button">Quitar visibles</button>
-    </div>
-
-    <div id="milestoneSubmittalGroups" class="milestone-submittal-groups"></div>
-
-    <div class="milestone-selector-footer">
-      <div>
-        <strong id="milestoneSelectedCount">0</strong>
-        <span>submittals aplicables seleccionados</span>
-      </div>
-      <div class="modal-actions-right">
-        <button id="cancelMilestoneSubmittalBtn" class="btn btn-secondary" type="button">Cancelar</button>
-        <button id="saveMilestoneSubmittalLinksBtn" class="btn btn-primary" type="button">Guardar asociación</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<div id="fokEditModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-card mechanical-submittal-modal">
-    <div class="modal-head">
-      <div>
-        <div class="eyebrow">MECHANICAL · FIRST OF A KIND</div>
-        <h2 id="fokEditTitle">Editar FoK</h2>
-        <p id="fokEditMeta" class="muted modal-sub"></p>
-      </div>
-      <button id="closeFokEditModalBtn" class="icon-btn" type="button">×</button>
-    </div>
-
-    <form id="fokEditForm">
-      <input id="fokEditId" type="hidden">
-
-      <div class="submittal-form-section">
-        <div class="submittal-form-section-head">
-          <span>01</span>
-          <div>
-            <strong>Documentación</strong>
-            <small>Puede reutilizarse entre ZAZ081 y ZAZ091.</small>
-          </div>
-        </div>
-
-        <div class="form-grid mechanical-form-grid">
-          <label>
-            <span>Estado documental</span>
-            <select id="fokDocStatus">
-              <option value="PENDING">Pendiente</option>
-              <option value="IN_PROGRESS">En preparación</option>
-              <option value="READY">Lista</option>
-              <option value="COPIED">Copiada de otro proyecto</option>
-            </select>
-          </label>
-
-          <label>
-            <span>Responsable</span>
-            <input id="fokOwner" type="text">
-          </label>
-
-          <label class="span-2">
-            <span>Report / Procore link</span>
-            <input id="fokReportLink" type="text">
-          </label>
-
-          <label class="span-2">
-            <span>Inspection Tool link</span>
-            <input id="fokInspectionToolLink" type="text">
-          </label>
-        </div>
-      </div>
-
-      <div class="submittal-form-section">
-        <div class="submittal-form-section-head">
-          <span>02</span>
-          <div>
-            <strong>Ejecución / inspección</strong>
-            <small>Siempre independiente para cada proyecto.</small>
-          </div>
-        </div>
-
-        <div class="form-grid mechanical-form-grid">
-          <label>
-            <span>Estado</span>
-            <select id="fokExecutionStatus">
-              <option value="NOT_PLANNED">No planificado</option>
-              <option value="PLANNED">Planificado</option>
-              <option value="INSPECTED">Inspección realizada</option>
-              <option value="APPROVED">Aprobado</option>
-              <option value="REINSPECTION">Reinspección</option>
-            </select>
-          </label>
-
-          <label>
-            <span>Fecha de inspección</span>
-            <input id="fokInspectionDate" type="date">
-          </label>
-
-          <label class="span-2">
-            <span>Comentarios</span>
-            <textarea id="fokComments" rows="4"></textarea>
-          </label>
-        </div>
-      </div>
-
-      <div class="modal-actions mechanical-modal-actions">
-        <div></div>
-        <div class="modal-actions-right">
-          <button id="cancelFokEditBtn" class="btn btn-secondary" type="button">Cancelar</button>
-          <button class="btn btn-primary" type="submit">Guardar FoK</button>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
-
-
-<div id="milestoneFokModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-card milestone-submittal-selector-modal">
-    <div class="modal-head">
-      <div>
-        <div class="eyebrow">MECHANICAL · FoK APLICABLES AL HITO</div>
-        <h2 id="milestoneFokModalTitle">Seleccionar FoK</h2>
-        <p id="milestoneFokModalMeta" class="muted modal-sub"></p>
-      </div>
-      <button id="closeMilestoneFokModalBtn" class="icon-btn" type="button">×</button>
-    </div>
-
-    <div class="milestone-selector-help">
-      Marca los FoK que deben estar <strong>APROBADOS</strong> antes de ejecutar este hito.
-    </div>
-
-    <div class="milestone-selector-toolbar">
-      <input id="milestoneFokSearch" type="search" placeholder="Buscar FoK…">
-      <button id="milestoneFokSelectAllBtn" class="btn btn-secondary btn-sm" type="button">Seleccionar visibles</button>
-      <button id="milestoneFokClearBtn" class="btn btn-secondary btn-sm" type="button">Quitar visibles</button>
-    </div>
-
-    <div id="milestoneFokGroups" class="milestone-submittal-groups"></div>
-
-    <div class="milestone-selector-footer">
-      <div>
-        <strong id="milestoneFokSelectedCount">0</strong>
-        <span>FoK seleccionados</span>
-      </div>
-      <div class="modal-actions-right">
-        <button id="cancelMilestoneFokBtn" class="btn btn-secondary" type="button">Cancelar</button>
-        <button id="saveMilestoneFokBtn" class="btn btn-primary" type="button">Guardar FoK del hito</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<div id="deliveryModal" class="modal hidden">
-  <div class="modal-backdrop"></div>
-  <div class="modal-card modal-wide">
-    <div class="modal-head">
-      <div>
-        <div class="eyebrow">DELIVERY</div>
-        <h2 id="deliveryModalTitle">Entrega</h2>
-        <p id="deliveryModalMeta" class="muted modal-sub"></p>
-      </div>
-      <button id="closeDeliveryModalBtn" class="icon-btn" type="button">×</button>
-    </div>
-
-    <div class="delivery-modal-grid">
-      <section>
-        <div class="workflow-highlight-grid">
-          <div class="workflow-highlight"><span>Proveedor</span><strong id="deliverySupplier"></strong></div>
-          <div class="workflow-highlight"><span>PO / Sage</span><strong id="deliveryPo"></strong></div>
-          <div class="workflow-highlight family-highlight"><span>Familia</span><strong id="deliveryFamily"></strong></div>
-          <div class="workflow-highlight"><span>Destino</span><strong id="deliveryDestination"></strong></div>
-        </div>
-        <div id="deliveryMaterials" class="workflow-materials"></div>
-      </section>
-
-      <section class="delivery-actions-panel">
-        <div class="delivery-action-block milestone-link-block">
-          <div class="eyebrow">HITO DE REFERENCIA</div>
-          <label>
-            <span>Hito constructivo</span>
-            <select id="deliveryMilestoneSelect">
-              <option value="">Sin hito asociado</option>
-            </select>
-          </label>
-          <div id="deliveryMilestoneOffset" class="milestone-offset neutral">Sin referencia constructiva.</div>
-          <button id="saveDeliveryMilestoneBtn" class="btn btn-secondary" type="button">Guardar referencia</button>
-        </div>
-
-        <div class="delivery-action-block">
-          <div class="eyebrow">REPROGRAMAR</div>
-          <label><span>Fecha prevista de entrega</span><input id="deliveryDateInput" type="date"></label>
-          <label><span>Motivo del cambio</span><textarea id="deliveryChangeReason" rows="3" placeholder="Ej. ajuste con proveedor por secuencia de obra"></textarea></label>
-          <button id="saveDeliveryDateBtn" class="btn btn-primary" type="button">Actualizar fecha</button>
-        </div>
-
-        <div class="delivery-action-block">
-          <div class="eyebrow">RECEPCIÓN</div>
-          <label>
-            <span>Estado de recepción</span>
-            <select id="deliveryReceiptStatus">
-              <option value="COMPLETA">Completa</option>
-              <option value="PARCIAL">Parcial</option>
-            </select>
-          </label>
-          <label><span>Observaciones</span><textarea id="deliveryReceiptNotes" rows="3" placeholder="Material pendiente, daños, discrepancias..."></textarea></label>
-          <button id="confirmDeliveryReceiptBtn" class="btn btn-secondary" type="button">Confirmar recepción</button>
-        </div>
-      </section>
-    </div>
-  </div>
-</div>
-
-<iframe name="backendFrame" id="backendFrame" class="hidden-frame"></iframe>
-
-<form id="backendForm" method="post" target="backendFrame" action="https://script.google.com/macros/s/AKfycbwtfMhFPG7unUBRTSfT4A6TKzd0o5baXB9QOFEndL56SFIsCcZlQ6o_M5PUfbmVNG26/exec" class="hidden">
-  <input type="hidden" name="action" id="backendAction">
-  <input type="hidden" name="credential" id="backendCredential">
-  <input type="hidden" name="payload" id="backendPayload">
-</form>
 
 <script>
-window.LEVITEC_CONFIG = {
-  GOOGLE_CLIENT_ID: "125715939878-v29u8atv0k8g6smekk6lfuhrtqob4c1b.apps.googleusercontent.com",
-  BACKEND_WEBAPP_URL: "https://script.google.com/macros/s/AKfycbwtfMhFPG7unUBRTSfT4A6TKzd0o5baXB9QOFEndL56SFIsCcZlQ6o_M5PUfbmVNG26/exec",
-  MESSAGE_SOURCE: "LEVITEC_SITE_CONTROL"
-};
+
+const GOOGLE_CLIENT_ID =
+  '879636449979-tl4u210nduk4vbqdfj5hl151483m9qja.apps.googleusercontent.com';
+
+const BACKEND_WEBAPP_URL =
+  'https://script.google.com/macros/s/AKfycbzANVYKwv2_R72_GlIEQ4hGyVqLBw_Oad5Xvh6lZ4vcsTYFpSPH0a-vOM8yMwwxo2RyUQ/exec';
+
+const params = new URLSearchParams(window.location.search);
+const TOKEN = (params.get('sc') || '').trim();
+
+let googleCredential = '';
+let busy = false;
+let currentSubcontractor = '';
+let availableTasks = [];
+const MAX_TASKS = 5;
+
+const OFFLINE_DB_NAME = 'LEVITEC_CONTROL_HORARIO';
+const OFFLINE_DB_VERSION = 1;
+const OFFLINE_STORE = 'pendingPunches';
+const PUNCH_TIMEOUT_MS = 12000;
+
+let activePunchRequest = null;
+let activePunchTimer = null;
+let syncInProgress = false;
+let currentUserEmail = '';
+let offlineModeInitialized = false;
+let incidentSubmitting = false;
+let loginValidationTimer = null;
+let loginValidating = false;
+let incidentTimer = null;
+
+
+/* FASE 2A · LOGIN GOOGLE ORIGINAL RESTAURADO */
+
+/* =========================================================
+   INICIO
+========================================================= */
+
+window.addEventListener('load', () => {
+
+  if (!TOKEN) {
+    show(
+      'QR no válido: falta el identificador de subcontrata.',
+      'err'
+    );
+    return;
+  }
+
+  document.getElementById('backendForm').action =
+    BACKEND_WEBAPP_URL;
+
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(ua);
+
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredentialResponse,
+    auto_select: isIOS,
+    cancel_on_tap_outside: false,
+    use_fedcm_for_button: isAndroid
+  });
+
+  google.accounts.id.renderButton(
+    document.getElementById('googleButton'),
+    {
+      theme:'outline',
+      size:'large',
+      text:'continue_with',
+      width:320
+    }
+  );
+
+  if (isIOS) {
+    google.accounts.id.prompt();
+  }
+
+
+});
+
+
+/* =========================================================
+   LOGIN GOOGLE
+========================================================= */
+
+function handleCredentialResponse(response) {
+
+  if (loginValidating) return;
+
+  if (!response || !response.credential) {
+    show(
+      'No se pudo obtener la identidad de Google.',
+      'err'
+    );
+    return;
+  }
+
+  googleCredential = response.credential;
+  loginValidating = true;
+
+  show(
+    'Validando trabajador y subcontrata…',
+    'info'
+  );
+
+  if (loginValidationTimer) clearTimeout(loginValidationTimer);
+
+  loginValidationTimer = setTimeout(() => {
+    loginValidating = false;
+    show(
+      'La validación está tardando más de lo normal. Pulsa de nuevo Continuar con Google.',
+      'warn'
+    );
+  }, 15000);
+
+  postToBackend({
+    action:'bootstrap',
+    credential:googleCredential,
+    token:TOKEN
+  });
+
+}
+
+
+/* =========================================================
+   GPS DE ALTA PRECISIÓN
+========================================================= */
+
+function getAccuratePosition(
+  maxAccuracy = 100,
+  timeoutMs = 15000
+) {
+
+  return new Promise((resolve, reject) => {
+
+    let bestPosition = null;
+    let watchId = null;
+    let finished = false;
+
+    function finishWithSuccess(pos) {
+
+      if (finished) return;
+
+      finished = true;
+
+      clearTimeout(timer);
+
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+
+      resolve(pos);
+    }
+
+
+    function finishWithError(error) {
+
+      if (finished) return;
+
+      finished = true;
+
+      clearTimeout(timer);
+
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+
+      reject(error);
+    }
+
+
+    const timer = setTimeout(() => {
+
+      if (bestPosition) {
+
+        finishWithError(
+          new Error(
+            'No se ha conseguido suficiente precisión GPS.\n' +
+            'Mejor precisión obtenida: ±' +
+            Math.round(bestPosition.coords.accuracy) +
+            ' m.\n\n' +
+            'Activa la ubicación precisa y vuelve a intentarlo.'
+          )
+        );
+
+      } else {
+
+        finishWithError(
+          new Error(
+            'No se ha podido obtener la ubicación.\n' +
+            'Comprueba que el GPS esté activado.'
+          )
+        );
+
+      }
+
+    }, timeoutMs);
+
+
+    watchId = navigator.geolocation.watchPosition(
+
+      pos => {
+
+        const accuracy = pos.coords.accuracy;
+
+        if (
+          !bestPosition ||
+          accuracy < bestPosition.coords.accuracy
+        ) {
+
+          bestPosition = pos;
+
+          show(
+            'Buscando ubicación precisa…\n' +
+            'Precisión actual: ±' +
+            Math.round(accuracy) +
+            ' m',
+            'info'
+          );
+
+        }
+
+        if (accuracy <= maxAccuracy) {
+          finishWithSuccess(pos);
+        }
+
+      },
+
+
+      err => {
+
+        let msg =
+          'No se pudo obtener la ubicación.';
+
+        if (err.code === 1) {
+          msg =
+            'Debes permitir el acceso a la ubicación para fichar.';
+        }
+
+        if (err.code === 2) {
+          msg =
+            'Ubicación no disponible. Activa GPS y ubicación precisa e inténtalo de nuevo.';
+        }
+
+        if (err.code === 3) {
+          msg =
+            'La ubicación ha tardado demasiado. Inténtalo de nuevo.';
+        }
+
+        finishWithError(
+          new Error(msg)
+        );
+
+      },
+
+
+      {
+        enableHighAccuracy:true,
+        maximumAge:0,
+        timeout:25000
+      }
+
+    );
+
+  });
+
+}
+
+
+/* =========================================================
+   FICHAJE
+========================================================= */
+
+function validateBasicPunchData() {
+
+  if (busy) return null;
+
+  if (!googleCredential) {
+    show(
+      'Vuelve a identificarte con Google.',
+      'err'
+    );
+    return null;
+  }
+
+  const project =
+    document.getElementById('project').value;
+
+  if (!project) {
+    show(
+      'Selecciona un proyecto.',
+      'err'
+    );
+    return null;
+  }
+
+  const subcontractorDetailInput =
+    document.getElementById('subcontractorDetail');
+
+  const subcontractorDetail =
+    subcontractorDetailInput
+      ? subcontractorDetailInput.value.trim()
+      : '';
+
+  if (
+    currentSubcontractor === 'NO LISTADO' &&
+    !subcontractorDetail
+  ) {
+    show(
+      'Indica el nombre de la subcontrata.',
+      'err'
+    );
+    return null;
+  }
+
+  return {
+    project,
+    subcontractorDetail
+  };
+}
+
+
+function punch(movement) {
+
+  const basic = validateBasicPunchData();
+  if (!basic) return;
+
+  if (movement === 'SALIDA') {
+
+    if (!availableTasks.length) {
+      show(
+        'No hay tareas activas configuradas para esta subcontrata.',
+        'err'
+      );
+      return;
+    }
+
+    openTaskModal();
+    return;
+  }
+
+  performPunch('ENTRADA', []);
+}
+
+
+async function performPunch(movement, tasks) {
+
+  const basic = validateBasicPunchData();
+  if (!basic) return;
+
+  if (!currentUserEmail) {
+    show('Identifícate con Google antes de registrar un fichaje.', 'warn');
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    show(
+      'Este dispositivo no permite obtener ubicación.',
+      'err'
+    );
+    return;
+  }
+
+  busy = true;
+  setButtons(true);
+
+  show(
+    navigator.onLine
+      ? 'Buscando ubicación precisa…'
+      : 'Sin conexión. Buscando ubicación para guardar el fichaje…',
+    'info'
+  );
+
+  try {
+
+    const pos =
+      await getAccuratePosition(100, 25000);
+
+    const clientEventId = makeClientEventId();
+
+    const payload = {
+      action:'punch',
+      token:TOKEN,
+      project:basic.project,
+      movement:movement,
+      subcontractorDetail:basic.subcontractorDetail,
+      tasksJson:movement === 'SALIDA'
+        ? JSON.stringify(tasks)
+        : '',
+      lat:pos.coords.latitude,
+      lon:pos.coords.longitude,
+      accuracy:pos.coords.accuracy,
+      clientEventId:clientEventId,
+      clientTimestamp:new Date().toISOString(),
+      queuedOffline:navigator.onLine ? 'NO' : 'SI',
+      ownerEmail:currentUserEmail
+    };
+
+    await savePendingPunch(payload);
+    await refreshSyncStatus();
+
+    if (!navigator.onLine) {
+      busy = false;
+      setButtons(false);
+
+      show(
+        movement + ' guardada en este dispositivo.\n' +
+        'Pendiente de sincronización.\n' +
+        'Se enviará al recuperar conexión.',
+        'warn'
+      );
+      return;
+    }
+
+    show(
+      'Ubicación válida.\n' +
+      'Precisión: ±' +
+      Math.round(pos.coords.accuracy) +
+      ' m\n' +
+      'Registrando fichaje…',
+      'info'
+    );
+
+    await sendQueuedPunch(payload, false);
+
+  } catch (err) {
+
+    busy = false;
+    setButtons(false);
+
+    show(
+      err && err.message
+        ? err.message
+        : 'No se pudo obtener una ubicación válida.',
+      'err'
+    );
+  }
+}
+
+
+
+/* =========================================================
+   INCIDENCIAS
+========================================================= */
+
+function setIncidentFeedback(message, type) {
+  const box = document.getElementById('incidentFeedback');
+  if (!box) return;
+
+  box.className =
+    'incident-feedback' +
+    (type ? ' ' + type : '');
+
+  box.textContent = message || '';
+}
+
+
+function resetIncidentSubmitState() {
+  incidentSubmitting = false;
+
+  if (incidentTimer) {
+    clearTimeout(incidentTimer);
+    incidentTimer = null;
+  }
+
+  const sendButton =
+    document.getElementById('incidentSendButton');
+
+  if (sendButton) {
+    sendButton.disabled = false;
+    sendButton.textContent = 'ENVIAR';
+  }
+}
+
+
+function openIncidentModal() {
+
+  if (!googleCredential || !currentUserEmail) {
+    show(
+      'Identifícate con Google antes de reportar una incidencia.',
+      'warn'
+    );
+    return;
+  }
+
+  const modal =
+    document.getElementById('incidentModal');
+
+  const dateInput =
+    document.getElementById('incidentDate');
+
+  const projectSelect =
+    document.getElementById('incidentProject');
+
+  const currentProject =
+    document.getElementById('project').value;
+
+  const today =
+    new Date();
+
+  const y =
+    today.getFullYear();
+
+  const m =
+    String(today.getMonth() + 1).padStart(2, '0');
+
+  const d =
+    String(today.getDate()).padStart(2, '0');
+
+  dateInput.value =
+    y + '-' + m + '-' + d;
+
+  projectSelect.innerHTML =
+    '<option value="">Sin especificar</option>';
+
+  const mainProjects =
+    document.getElementById('project').options;
+
+  Array.from(mainProjects).forEach(option => {
+
+    if (!option.value) return;
+
+    const clone =
+      document.createElement('option');
+
+    clone.value =
+      option.value;
+
+    clone.textContent =
+      option.textContent;
+
+    projectSelect.appendChild(clone);
+  });
+
+  if (currentProject) {
+    projectSelect.value =
+      currentProject;
+  }
+
+  document.getElementById('incidentType').value = '';
+  document.getElementById('incidentTime').value = '';
+  document.getElementById('incidentDescription').value = '';
+  setIncidentFeedback('', '');
+
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+
+function closeIncidentModal() {
+
+  if (incidentSubmitting) return;
+
+  const modal =
+    document.getElementById('incidentModal');
+
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+
+function submitIncident() {
+
+  if (incidentSubmitting) return;
+
+  if (!navigator.onLine) {
+    setIncidentFeedback('Necesitas conexión para enviar la incidencia.', 'err');
+    return;
+  }
+
+  const type =
+    document.getElementById('incidentType').value;
+
+  const date =
+    document.getElementById('incidentDate').value;
+
+  const project =
+    document.getElementById('incidentProject').value;
+
+  const time =
+    document.getElementById('incidentTime').value;
+
+  const description =
+    document.getElementById('incidentDescription').value.trim();
+
+  if (!type) {
+    setIncidentFeedback('Selecciona el tipo de incidencia.', 'err');
+    return;
+  }
+
+  if (!date) {
+    setIncidentFeedback('Indica la fecha afectada.', 'err');
+    return;
+  }
+
+  if (!description) {
+    setIncidentFeedback('Describe brevemente qué ha ocurrido.', 'err');
+    return;
+  }
+
+  if (description.length > 500) {
+    setIncidentFeedback('La descripción es demasiado larga.', 'err');
+    return;
+  }
+
+  const subcontractorDetailInput =
+    document.getElementById('subcontractorDetail');
+
+  const subcontractorDetail =
+    subcontractorDetailInput
+      ? subcontractorDetailInput.value.trim()
+      : '';
+
+  if (
+    currentSubcontractor === 'NO LISTADO' &&
+    !subcontractorDetail
+  ) {
+    setIncidentFeedback('Indica primero el nombre de la subcontrata.', 'err');
+    return;
+  }
+
+  incidentSubmitting = true;
+
+  const sendButton =
+    document.getElementById('incidentSendButton');
+
+  sendButton.disabled = true;
+  sendButton.textContent = 'ENVIANDO…';
+
+  setIncidentFeedback(
+    'Enviando incidencia…',
+    'info'
+  );
+
+  if (incidentTimer) {
+    clearTimeout(incidentTimer);
+  }
+
+  incidentTimer = setTimeout(() => {
+    resetIncidentSubmitState();
+    setIncidentFeedback(
+      'No se ha recibido respuesta del servidor. Comprueba la conexión y vuelve a intentarlo.',
+      'err'
+    );
+  }, 15000);
+
+  postToBackend({
+    action:'createIncident',
+    credential:googleCredential,
+    token:TOKEN,
+    subcontractorDetail:subcontractorDetail,
+    incidentType:type,
+    incidentDate:date,
+    incidentProject:project,
+    incidentTime:time,
+    incidentDescription:description
+  });
+}
+
+
+/* =========================================================
+   TAREAS DE SALIDA
+========================================================= */
+
+function openTaskModal() {
+
+  const rows = document.getElementById('taskRows');
+  rows.innerHTML = '';
+
+  addTaskRow();
+
+  const modal = document.getElementById('taskModal');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+
+function closeTaskModal() {
+
+  const modal = document.getElementById('taskModal');
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+
+function addTaskRow() {
+
+  const container = document.getElementById('taskRows');
+  const count = container.querySelectorAll('.task-row').length;
+
+  if (count >= MAX_TASKS) return;
+
+  const row = document.createElement('div');
+  row.className = 'task-row';
+
+  row.innerHTML = `
+    <div class="task-row-title">Tarea ${count + 1}</div>
+
+    ${count > 0 ? `
+      <button
+        type="button"
+        class="task-remove"
+        aria-label="Eliminar tarea"
+        onclick="removeTaskRow(this)">×</button>
+    ` : ''}
+
+    <label>Tarea</label>
+    <select class="work-task" onchange="handleTaskTypeChange(this)">
+      <option value="">Selecciona tarea</option>
+      ${availableTasks.map(task =>
+        `<option value="${escapeHtml(task)}">${escapeHtml(task)}</option>`
+      ).join('')}
+    </select>
+
+    <div class="task-description-block">
+      <label>Descripción</label>
+      <input
+        type="text"
+        class="work-description"
+        maxlength="250"
+        placeholder="Describe brevemente el trabajo realizado">
+    </div>
+
+    <label>Zona</label>
+    <input
+      type="text"
+      class="work-zone"
+      maxlength="100"
+      placeholder="Ej.: Electrical Room 2, Offices, Roof...">
+  `;
+
+  container.appendChild(row);
+  refreshTaskRows();
+}
+
+
+function removeTaskRow(button) {
+
+  const row = button.closest('.task-row');
+  if (row) row.remove();
+
+  refreshTaskRows();
+}
+
+
+function refreshTaskRows() {
+
+  const rows =
+    [...document.querySelectorAll('#taskRows .task-row')];
+
+  rows.forEach((row, index) => {
+    const title = row.querySelector('.task-row-title');
+    if (title) title.textContent = 'Tarea ' + (index + 1);
+  });
+
+  const count = rows.length;
+
+  document.getElementById('taskCounter').textContent =
+    count + ' de ' + MAX_TASKS + ' tareas';
+
+  document.getElementById('addTaskButton').style.display =
+    count >= MAX_TASKS ? 'none' : 'block';
+}
+
+
+function handleTaskTypeChange(select) {
+
+  const row = select.closest('.task-row');
+  if (!row) return;
+
+  const block =
+    row.querySelector('.task-description-block');
+
+  const input =
+    row.querySelector('.work-description');
+
+  const isOther =
+    String(select.value || '')
+      .trim()
+      .toUpperCase() === 'OTRO';
+
+  block.classList.toggle('visible', isOther);
+
+  if (!isOther) {
+    input.value = '';
+  }
+}
+
+
+function collectWorkTasks() {
+
+  const rows =
+    [...document.querySelectorAll('#taskRows .task-row')];
+
+  if (!rows.length) {
+    throw new Error('Indica al menos una tarea realizada.');
+  }
+
+  return rows.map((row, index) => {
+
+    const task =
+      row.querySelector('.work-task').value.trim();
+
+    const description =
+      row.querySelector('.work-description').value.trim();
+
+    const zone =
+      row.querySelector('.work-zone').value.trim();
+
+    if (!task) {
+      throw new Error(
+        'Selecciona la tarea ' + (index + 1) + '.'
+      );
+    }
+
+    if (
+      task.toUpperCase() === 'OTRO' &&
+      !description
+    ) {
+      throw new Error(
+        'Describe la tarea ' + (index + 1) +
+        ' porque has seleccionado OTRO.'
+      );
+    }
+
+    return {
+      task,
+      description:
+        task.toUpperCase() === 'OTRO'
+          ? description
+          : '',
+      zone
+    };
+  });
+}
+
+
+function confirmExitTasks() {
+
+  try {
+
+    const tasks = collectWorkTasks();
+
+    closeTaskModal();
+
+    performPunch('SALIDA', tasks);
+
+  } catch (err) {
+
+    show(
+      err && err.message
+        ? err.message
+        : 'Revisa las tareas indicadas.',
+      'err'
+    );
+  }
+}
+
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+
+
+/* =========================================================
+   MODO MALA CONEXIÓN / COLA OFFLINE
+========================================================= */
+
+function startOfflineModeAfterLogin() {
+
+  if (offlineModeInitialized) return;
+  offlineModeInitialized = true;
+
+  initOfflineMode();
+
+  if ('serviceWorker' in navigator) {
+    setTimeout(() => {
+      navigator.serviceWorker
+        .register('./sw.js')
+        .catch(() => {});
+    }, 700);
+  }
+}
+
+
+function initOfflineMode() {
+
+  window.addEventListener('online', async () => {
+    await refreshSyncStatus();
+
+    if (googleCredential) {
+      syncPendingPunches(false);
+    }
+  });
+
+  window.addEventListener('offline', refreshSyncStatus);
+
+  refreshSyncStatus();
+}
+
+
+function openOfflineDb() {
+
+  return new Promise((resolve, reject) => {
+
+    const req =
+      indexedDB.open(
+        OFFLINE_DB_NAME,
+        OFFLINE_DB_VERSION
+      );
+
+    req.onupgradeneeded = () => {
+
+      const db = req.result;
+
+      if (!db.objectStoreNames.contains(OFFLINE_STORE)) {
+
+        const store =
+          db.createObjectStore(
+            OFFLINE_STORE,
+            {keyPath:'clientEventId'}
+          );
+
+        store.createIndex(
+          'clientTimestamp',
+          'clientTimestamp',
+          {unique:false}
+        );
+      }
+    };
+
+    req.onsuccess = () => resolve(req.result);
+
+    req.onerror = () => reject(
+      req.error ||
+      new Error('No se pudo abrir el almacenamiento offline.')
+    );
+  });
+}
+
+
+async function savePendingPunch(payload) {
+
+  const db = await openOfflineDb();
+
+  return new Promise((resolve, reject) => {
+
+    const tx =
+      db.transaction(
+        OFFLINE_STORE,
+        'readwrite'
+      );
+
+    tx.objectStore(OFFLINE_STORE).put(
+      Object.assign(
+        {},
+        payload,
+        {savedAt:new Date().toISOString()}
+      )
+    );
+
+    tx.oncomplete = () => resolve();
+
+    tx.onerror = () => reject(
+      tx.error ||
+      new Error('No se pudo guardar el fichaje pendiente.')
+    );
+  });
+}
+
+
+async function deletePendingPunch(clientEventId) {
+
+  const db = await openOfflineDb();
+
+  return new Promise((resolve, reject) => {
+
+    const tx =
+      db.transaction(
+        OFFLINE_STORE,
+        'readwrite'
+      );
+
+    tx.objectStore(OFFLINE_STORE).delete(clientEventId);
+
+    tx.oncomplete = () => resolve();
+
+    tx.onerror = () => reject(
+      tx.error ||
+      new Error('No se pudo actualizar la cola offline.')
+    );
+  });
+}
+
+
+async function getPendingPunches() {
+
+  const db = await openOfflineDb();
+
+  return new Promise((resolve, reject) => {
+
+    const tx =
+      db.transaction(
+        OFFLINE_STORE,
+        'readonly'
+      );
+
+    const req =
+      tx.objectStore(OFFLINE_STORE).getAll();
+
+    req.onsuccess = () => {
+
+      const rows =
+        Array.isArray(req.result)
+          ? req.result
+          : [];
+
+      const owner =
+        String(currentUserEmail || '')
+          .trim()
+          .toLowerCase();
+
+      const filtered =
+        owner
+          ? rows.filter(
+              row =>
+                String(row.ownerEmail || '')
+                  .trim()
+                  .toLowerCase() === owner
+            )
+          : [];
+
+      filtered.sort(
+        (a,b) =>
+          new Date(a.clientTimestamp) -
+          new Date(b.clientTimestamp)
+      );
+
+      resolve(filtered);
+    };
+
+    req.onerror = () => reject(
+      req.error ||
+      new Error('No se pudo leer la cola offline.')
+    );
+  });
+}
+
+
+async function refreshSyncStatus() {
+
+  const box = document.getElementById('syncBox');
+  const title = document.getElementById('syncTitle');
+  const detail = document.getElementById('syncDetail');
+
+  if (!box || !title || !detail) return;
+
+  if (!currentUserEmail) {
+    box.classList.add('prelogin');
+    return;
+  }
+
+  box.classList.remove('prelogin');
+
+  try {
+
+    const pending = await getPendingPunches();
+    const count = pending.length;
+
+    box.classList.remove('pending', 'offline');
+
+    if (!navigator.onLine) {
+
+      box.classList.add('offline');
+      title.textContent = 'Sin conexión';
+
+      detail.textContent =
+        count
+          ? count +
+            ' fichaje' +
+            (count === 1 ? '' : 's') +
+            ' pendiente' +
+            (count === 1 ? '' : 's')
+          : 'Sin conexión con el servidor';
+
+      return;
+    }
+
+    if (count) {
+
+      box.classList.add('pending');
+      title.textContent = 'Pendiente de sincronización';
+
+      detail.textContent =
+        count +
+        ' fichaje' +
+        (count === 1 ? '' : 's') +
+        ' pendiente' +
+        (count === 1 ? '' : 's');
+
+      return;
+    }
+
+    title.textContent = 'Sincronización';
+    detail.textContent = '0 fichajes pendientes';
+
+  } catch (err) {
+
+    box.classList.add('pending');
+    title.textContent = 'Sincronización';
+    detail.textContent = 'No se pudo comprobar el estado local';
+  }
+}
+
+
+function makeClientEventId() {
+
+  if (
+    window.crypto &&
+    typeof window.crypto.randomUUID === 'function'
+  ) {
+    return window.crypto.randomUUID();
+  }
+
+  return (
+    'evt_' +
+    Date.now().toString(36) +
+    '_' +
+    Math.random().toString(36).slice(2, 12)
+  );
+}
+
+
+function isAuthRetryableMessage(message) {
+
+  const m =
+    String(message || '').toLowerCase();
+
+  return (
+    m.includes('sesión de google') ||
+    m.includes('identidad de google') ||
+    m.includes('ha caducado')
+  );
+}
+
+
+async function sendQueuedPunch(payload, fromSync) {
+
+  const payloadOwner =
+    String(payload.ownerEmail || '')
+      .trim()
+      .toLowerCase();
+
+  if (!currentUserEmail || payloadOwner !== currentUserEmail) {
+    throw new Error('Este fichaje pendiente pertenece a otra identidad y no puede sincronizarse con esta sesión.');
+  }
+
+  if (!googleCredential) {
+    throw new Error(
+      'Vuelve a identificarte con Google para sincronizar.'
+    );
+  }
+
+  if (!navigator.onLine) {
+    await refreshSyncStatus();
+    return;
+  }
+
+  const requestId = makeClientEventId();
+
+  activePunchRequest = {
+    clientEventId:payload.clientEventId,
+    requestId:requestId,
+    fromSync:!!fromSync
+  };
+
+  if (activePunchTimer) {
+    clearTimeout(activePunchTimer);
+  }
+
+  activePunchTimer =
+    setTimeout(
+      async () => {
+
+        const current = activePunchRequest;
+
+        activePunchRequest = null;
+        activePunchTimer = null;
+
+        busy = false;
+        setButtons(false);
+
+        await refreshSyncStatus();
+
+        if (!current) return;
+
+        show(
+          'No se ha recibido confirmación del servidor.\n' +
+          'El fichaje queda guardado y se reintentará automáticamente.',
+          'warn'
+        );
+
+      },
+      PUNCH_TIMEOUT_MS
+    );
+
+  postToBackend(
+    Object.assign(
+      {},
+      payload,
+      {
+        credential:googleCredential,
+        requestId:requestId
+      }
+    )
+  );
+}
+
+
+async function syncPendingPunches(manual) {
+
+  if (syncInProgress) return;
+
+  if (!navigator.onLine) {
+
+    await refreshSyncStatus();
+
+    if (manual) {
+      show(
+        'No hay conexión para sincronizar.',
+        'warn'
+      );
+    }
+
+    return;
+  }
+
+  if (!googleCredential) {
+
+    if (manual) {
+      show(
+        'Identifícate con Google para sincronizar fichajes pendientes.',
+        'warn'
+      );
+    }
+
+    return;
+  }
+
+  const pending = await getPendingPunches();
+
+  if (!pending.length) {
+
+    await refreshSyncStatus();
+
+    if (manual) {
+      show(
+        'No hay fichajes pendientes.',
+        'ok'
+      );
+    }
+
+    return;
+  }
+
+  syncInProgress = true;
+
+  try {
+
+    show(
+      'Sincronizando fichajes pendientes…\n' +
+      'Quedan ' + pending.length + '.',
+      'info'
+    );
+
+    await sendQueuedPunch(
+      pending[0],
+      true
+    );
+
+  } finally {
+    syncInProgress = false;
+  }
+}
+
+
+async function continuePendingSync() {
+
+  if (!navigator.onLine || !googleCredential) {
+    return;
+  }
+
+  const pending = await getPendingPunches();
+
+  if (!pending.length) {
+    await refreshSyncStatus();
+    return;
+  }
+
+  setTimeout(
+    () => {
+      sendQueuedPunch(
+        pending[0],
+        true
+      );
+    },
+    350
+  );
+}
+
+
+/* =========================================================
+   ENVÍO AL BACKEND
+========================================================= */
+
+function postToBackend(data) {
+
+  Object.entries(data).forEach(
+    ([k,v]) => {
+
+      const el =
+        document.getElementById('f_' + k);
+
+      if (el) {
+        el.value =
+          v == null ? '' : String(v);
+      }
+
+    }
+  );
+
+  document
+    .getElementById('backendForm')
+    .submit();
+
+}
+
+
+/* =========================================================
+   RESPUESTA DEL BACKEND
+========================================================= */
+
+window.addEventListener(
+  'message',
+  async event => {
+
+    if (
+      event.origin !==
+        'https://script.google.com' &&
+      !event.origin.endsWith(
+        '.googleusercontent.com'
+      )
+    ) {
+      return;
+    }
+
+
+    const data =
+      event.data || {};
+
+
+    if (
+      data.source !==
+      'LEVITEC_BACKEND'
+    ) {
+      return;
+    }
+
+
+    /* ---------- BOOTSTRAP ---------- */
+
+    if (data.type === 'bootstrap') {
+
+      loginValidating = false;
+
+      if (loginValidationTimer) {
+        clearTimeout(loginValidationTimer);
+        loginValidationTimer = null;
+      }
+
+      if (!data.ok) {
+
+        show(
+          data.message ||
+          'No autorizado.',
+          'err'
+        );
+
+        return;
+
+      }
+
+
+      document
+        .getElementById('workerName')
+        .textContent =
+        data.worker;
+
+
+      document
+        .getElementById('workerEmail')
+        .textContent =
+        data.email;
+
+      currentUserEmail =
+        String(data.email || '')
+          .trim()
+          .toLowerCase();
+
+      startOfflineModeAfterLogin();
+
+      document
+        .getElementById('subcontractor')
+        .textContent =
+        data.subcontractor;
+
+
+      currentSubcontractor =
+        String(data.subcontractor || '')
+          .trim()
+          .toUpperCase();
+
+
+      availableTasks =
+        Array.isArray(data.tasks)
+          ? data.tasks
+              .map(t => String(t || '').trim())
+              .filter(Boolean)
+          : [];
+
+
+      const detailBlock =
+        document.getElementById('subcontractorDetailBlock');
+
+      const detailInput =
+        document.getElementById('subcontractorDetail');
+
+      if (currentSubcontractor === 'NO LISTADO') {
+
+        detailBlock.style.display = 'block';
+        detailInput.required = true;
+
+      } else {
+
+        detailBlock.style.display = 'none';
+        detailInput.required = false;
+        detailInput.value = '';
+
+      }
+
+
+      const sel =
+        document.getElementById('project');
+
+
+      sel.innerHTML =
+        '<option value="">Selecciona proyecto</option>';
+
+
+      (data.projects || [])
+        .forEach(p => {
+
+          const o =
+            document.createElement('option');
+
+          o.value =
+            p.code;
+
+          o.textContent =
+            p.code;
+
+          sel.appendChild(o);
+
+        });
+
+
+      document
+        .getElementById('loginBox')
+        .style.display =
+        'none';
+
+
+      document
+        .getElementById('app')
+        .style.display =
+        'block';
+
+
+      document
+        .getElementById('status')
+        .style.display =
+        'none';
+
+      refreshSyncStatus();
+
+      if (navigator.onLine) {
+        syncPendingPunches(false);
+      }
+
+    }
+
+
+    /* ---------- INCIDENCIA ---------- */
+
+    if (data.type === 'createIncident') {
+
+      resetIncidentSubmitState();
+
+      if (!data.ok) {
+        setIncidentFeedback(
+          data.message ||
+          'No se pudo registrar la incidencia.',
+          'err'
+        );
+        return;
+      }
+
+      setIncidentFeedback(
+        'Incidencia registrada correctamente. Referencia: ' +
+        data.incidentId,
+        'ok'
+      );
+
+      setTimeout(() => {
+        closeIncidentModal();
+
+        show(
+          'Incidencia registrada correctamente.\n' +
+          'Referencia: ' +
+          data.incidentId,
+          'ok'
+        );
+      }, 900);
+
+      return;
+    }
+
+
+    /* ---------- FICHAJE ---------- */
+
+    if (data.type === 'punch') {
+
+      if (
+        activePunchRequest &&
+        data.requestId &&
+        data.requestId !== activePunchRequest.requestId
+      ) {
+        return;
+      }
+
+      const current = activePunchRequest;
+
+      if (activePunchTimer) {
+        clearTimeout(activePunchTimer);
+        activePunchTimer = null;
+      }
+
+      activePunchRequest = null;
+
+      busy = false;
+      setButtons(false);
+
+
+      if (!data.ok) {
+
+        const retryableAuth =
+          isAuthRetryableMessage(data.message);
+
+        if (
+          current &&
+          current.clientEventId &&
+          !retryableAuth
+        ) {
+          await deletePendingPunch(current.clientEventId);
+        }
+
+        await refreshSyncStatus();
+
+        show(
+          retryableAuth
+            ? (
+                (data.message || 'La sesión ha caducado.') +
+                '\nEl fichaje permanece pendiente. ' +
+                'Vuelve a identificarte para sincronizar.'
+              )
+            : (
+                data.message ||
+                'No se pudo registrar el fichaje.'
+              ),
+          retryableAuth ? 'warn' : 'err'
+        );
+
+        if (
+          current &&
+          current.fromSync &&
+          !retryableAuth
+        ) {
+          continuePendingSync();
+        }
+
+        return;
+      }
+
+
+      if (current && current.clientEventId) {
+        await deletePendingPunch(current.clientEventId);
+      }
+
+      await refreshSyncStatus();
+
+
+      show(
+
+        data.message + '\n' +
+
+        data.time + '\n' +
+
+        data.worker +
+        ' · ' +
+        data.project +
+        '\n' +
+
+        'Distancia: ' +
+        data.distance +
+        ' m · Precisión: ±' +
+        Math.round(Number(data.accuracy || 0)) +
+        ' m' +
+
+        (
+          data.tasksSaved
+            ? '\nTareas registradas: ' + data.tasksSaved
+            : ''
+        ) +
+
+        (
+          data.wasDuplicate
+            ? '\nFichaje sincronizado correctamente.'
+            : ''
+        ),
+
+        'ok'
+      );
+
+
+      if (current && current.fromSync) {
+        continuePendingSync();
+      }
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   UTILIDADES
+========================================================= */
+
+function setButtons(disabled) {
+
+  document
+    .querySelectorAll('button')
+    .forEach(
+      b =>
+        b.disabled =
+        disabled
+    );
+
+}
+
+
+function show(msg, cls) {
+
+  const el =
+    document.getElementById('status');
+
+  el.className =
+    'status ' + cls;
+
+  el.textContent =
+    msg;
+
+  el.style.display =
+    'block';
+
+}
+
 </script>
 
-<script src="app.js?v=0.14.0"></script>
 </body>
 </html>

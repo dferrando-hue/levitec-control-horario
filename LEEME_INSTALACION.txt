@@ -1,0 +1,16 @@
+LEVITEC · Control de trabajos — instalación
+
+OPCIÓN RECOMENDADA: PWA
+1. Sube estos archivos al mismo repositorio:
+   - encargado.html
+   - manifest-encargado.webmanifest
+   - sw-encargado.js
+   - levitec-encargados-192.png
+   - levitec-encargados-512.png
+2. Abre:
+   https://dferrando-hue.github.io/levitec-control-horario/encargado.html
+3. En Android/Chrome o PC/Edge/Chrome aparecerá la opción de instalar.
+4. En iPhone/iPad: Compartir > Añadir a pantalla de inicio.
+
+WINDOWS OPCIONAL:
+- Instalar_acceso_directo_LEVITEC_Windows.cmd crea un acceso directo en el Escritorio.
